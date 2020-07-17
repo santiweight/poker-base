@@ -1,0 +1,185 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 8ffa4ff76513a56cc88c52dee8d907adcc8bb7ae9b9cb21769befc57052862da
+
+name:           poker-base
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/Exploit#readme>
+homepage:       https://github.com/santiweight/Exploit#readme
+bug-reports:    https://github.com/santiweight/Exploit/issues
+author:         Santiago Weight
+maintainer:     santiago.weight@gmail.com
+copyright:      2019 Santiago Weight
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/santiweight/Exploit
+
+library
+  exposed-modules:
+      Poker.Base
+      Poker.Types
+      Poker.Types.ActionIx
+      Poker.Types.Cards
+      Poker.Types.Game
+  other-modules:
+      Paths_poker_base
+  hs-source-dirs:
+      src
+  default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
+  ghc-options: -Wall
+  build-depends:
+      HUnit
+    , QuickCheck
+    , aeson
+    , array
+    , async
+    , attoparsec
+    , base
+    , base-compat
+    , bytestring
+    , comonad
+    , containers
+    , data-default
+    , deepseq
+    , deriving-compat
+    , directory
+    , do-notation
+    , either
+    , errors
+    , esqueleto
+    , filepath
+    , free
+    , generic-arbitrary
+    , generic-data
+    , http-media
+    , lens
+    , lucid
+    , megaparsec
+    , monad-logger
+    , monad-loops
+    , mtl
+    , optparse-applicative
+    , persistent
+    , persistent-postgresql
+    , persistent-template
+    , polysemy
+    , polysemy-plugin
+    , prettyprinter
+    , quickcheck-assertions
+    , random-shuffle
+    , recursion-schemes
+    , resourcet
+    , scientific
+    , serialise
+    , servant
+    , servant-lucid
+    , servant-snap
+    , singletons
+    , snap-core
+    , sort
+    , string-conversions
+    , syb
+    , tasty
+    , tasty-discover
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , text
+    , time
+    , transformers
+    , uniplate
+    , unordered-containers
+    , vector
+    , wai
+    , warp
+  default-language: Haskell2010
+
+test-suite exploit-poker-test
+  type: exitcode-stdio-1.0
+  main-is: Driver.hs
+  other-modules:
+      Base
+      Instances
+      Paths_poker_base
+  hs-source-dirs:
+      test
+  default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fplugin=Polysemy.Plugin
+  build-depends:
+      HUnit
+    , QuickCheck
+    , aeson
+    , array
+    , async
+    , attoparsec
+    , base
+    , base-compat
+    , bytestring
+    , comonad
+    , containers
+    , data-default
+    , deepseq
+    , deriving-compat
+    , directory
+    , do-notation
+    , either
+    , errors
+    , esqueleto
+    , filepath
+    , free
+    , generic-arbitrary
+    , generic-data
+    , http-media
+    , lens
+    , lucid
+    , megaparsec
+    , monad-logger
+    , monad-loops
+    , mtl
+    , optparse-applicative
+    , persistent
+    , persistent-postgresql
+    , persistent-template
+    , poker-base
+    , polysemy
+    , polysemy-plugin
+    , prettyprinter
+    , quickcheck-assertions
+    , random-shuffle
+    , recursion-schemes
+    , resourcet
+    , scientific
+    , serialise
+    , servant
+    , servant-lucid
+    , servant-snap
+    , singletons
+    , snap-core
+    , sort
+    , string-conversions
+    , syb
+    , tasty
+    , tasty-discover
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , text
+    , time
+    , transformers
+    , uniplate
+    , unordered-containers
+    , vector
+    , wai
+    , warp
+  default-language: Haskell2010

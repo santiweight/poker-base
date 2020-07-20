@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 
@@ -17,7 +16,6 @@ module Poker.Base
 
 import Control.Monad (guard)
 import Data.List (sort)
-import qualified Data.Map as Map
 import Poker.Types
 
 isTableAction :: Action -> Bool

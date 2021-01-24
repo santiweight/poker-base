@@ -5,8 +5,7 @@
 # https://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # WORKING RESOLVER 8.6.6
-resolver: lts-14.20
-# nightly-2020-05-10
+resolver: nightly-2019-09-11
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.

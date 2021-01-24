@@ -6,7 +6,7 @@
 module Poker.Base
   ( module Poker.Types
   , isTableAction, isDealerAction, isPlayerAction
-  , inRange, inIndex
+  , inIndex
   , atPosition
   , sortPreflop, sortPostflop
   , listCard, listRank, listSuit, listShape, listPosition, listHoldemHoldings
@@ -17,33 +17,29 @@ module Poker.Base
 import Control.Monad (guard)
 import Data.List (sort)
 import Poker.Types
+import Poker.Types.IsBetSize (inRange, IsBetSize(sub))
 
-isTableAction :: Action -> Bool
+isTableAction :: Action t -> Bool
 isTableAction act = case act of
   MkPlayerAction _ -> True
   _                -> False
 
-isPlayerAction :: Action -> Bool
+isPlayerAction :: Action t -> Bool
 isPlayerAction act = case act of
   MkPlayerAction _ -> True
   _                -> False
 
-isDealerAction :: Action -> Bool
+isDealerAction :: Action t -> Bool
 isDealerAction act = case act of
   MkDealerAction _ -> True
   _ -> False
 
-inRange :: IxRange -> Double -> Bool
-inRange (BetweenRn low up) bet = low < bet && bet < up
-inRange (AboveRn low) bet = low < bet
-inRange (BelowRn up) bet = bet < up
-inRange AnyRn _ = True
-
-inIndex :: ActionIx -> BetAction -> Bool
+inIndex :: IsBetSize t => ActionIx t -> BetAction t -> Bool
+-- inIndex = undefined
 inIndex AnyIx _ = True
 inIndex CheckIx Check = True
-inIndex (RaiseIx range) (Raise from to) = inRange range (to - from)
-inIndex (RaiseOrAllInIx range) (Raise from to) = inRange range (to - from)
+inIndex (RaiseIx range) (Raise from to) = inRange range (to `sub` from)
+inIndex (RaiseOrAllInIx range) (Raise from to) = inRange range (to `sub` from)
 inIndex (RaiseOrAllInIx range) (AllIn bet) = inRange range bet
 inIndex (AllInIx range) (AllIn allIn) = inRange range allIn
 inIndex (BetIx range) (Bet bet) = inRange range bet
@@ -51,7 +47,7 @@ inIndex CallIx (Call _) = True
 inIndex FoldIx Fold = True
 inIndex _ _ = False
 
-atPosition :: Position -> PlayerAction -> Bool
+atPosition :: Position -> PlayerAction t -> Bool
 atPosition pos = (pos ==) . position
 
 -- Sort a list of positions according to preflop ordering

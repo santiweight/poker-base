@@ -1,4 +1,9 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Poker.Types.Game where
   -- ( Action (..)
   -- , TableActionValue (..)
@@ -59,18 +64,24 @@ type Seat = Int
 data Network = Bovada | PokerStars | Unknown
   deriving (Read, Show, Enum, Eq, Ord, Generic)
 
-data BetAction
-  = Call Double
+newtype PotSize b = PotSize b
+  deriving (Show, Eq, Ord, Num)
+
+newtype StackSize b = StackSize b
+  deriving (Show, Eq, Ord, Num)
+
+data BetAction t
+  = Call t
   | Raise
-      { amountRaised :: Double,
-        raisedTo :: Double
+      { amountRaised :: t,
+        raisedTo :: t
       }
   | AllInRaise
-      { amountRaisedAI :: Double,
-        raisedAITo :: Double
+      { amountRaisedAI :: t,
+        raisedAITo :: t
       }
-  | Bet Double
-  | AllIn Double
+  | Bet t
+  | AllIn t
   | Fold
   | FoldTimeout
   | Check
@@ -78,32 +89,32 @@ data BetAction
   | OtherAction -- TODO remove
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
 
-data PlayerAction
+data PlayerAction t
   = PlayerAction
       { position :: Position,
-        action :: BetAction,
+        action :: BetAction t,
         isHero :: IsHero
       }
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
 
-data TableAction
-  = TableAction Position TableActionValue
+data TableAction t
+  = TableAction Position (TableActionValue t)
   | UnknownAction
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
 
-data TableActionValue
-  = Post Double
-  | PostDead Double
+data TableActionValue t
+  = Post t
+  | PostDead t
   | Leave
-  | Deposit Double
+  | Deposit t
   | Enter
   | SitOut
   | SitDown
   | Showdown [Card] String
   | Muck [Card] String
   | Rejoin
-  | Return Double
-  | Result Double
+  | Return t
+  | Result t
   deriving (Read, Show, Ord, Eq, Data, Typeable, Generic)
 
 -- TODO Fix the below to become the above
@@ -115,44 +126,32 @@ data DealerAction
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
 
 
-data Action
-  = MkPlayerAction PlayerAction
+data Action t
+  = MkPlayerAction (PlayerAction t)
   | MkDealerAction DealerAction
-  | MkTableAction TableAction
+  | MkTableAction (TableAction t)
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
 
-class IsAction a where
-  toAction :: a -> Action
-
-instance IsAction PlayerAction where
-  toAction = MkPlayerAction
-
-instance IsAction TableAction where
-  toAction = MkTableAction
-
-instance IsAction DealerAction where
-  toAction = MkDealerAction
-
-data Player
+data Player t
   = Player
       { _name :: Maybe String,
         _playerPosition :: Maybe Position,
         _playerHolding :: Maybe Holding,
-        _stack :: Double,
+        _stack :: t,
         _seat :: Seat
       }
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Generic, Functor)
 
-data Hand
+data Hand t
   = Hand
       { _handID :: Int,
         _handNetwork :: Network,
         _handTy :: GameType,
         _handTime :: LocalTime,
         _handStakes :: Double,
-        _handPlayerMap :: Map Seat Player,
+        _handPlayerMap :: Map Seat (Player t),
         _handSeatMap :: Map Position Seat,
-        _handActions :: [Action],
+        _handActions :: [Action t],
         _handText :: String
       }
   deriving (Show, Eq, Ord, Generic)

@@ -1,19 +1,22 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Poker.Types.Cards where
 
 import GHC.Generics
 import Data.Data
-import Data.Functor
 import Text.Read
 import Control.Applicative
 
+-- | The 'Rank' of a playing card
 data Rank = Two | Three | Four
           | Five | Six | Seven | Eight | Nine | Ten
           | Jack | Queen | King | Ace
     deriving (Enum, Eq, Ord, Data, Typeable, Generic)
 
+-- | The 'Suit' of a playing card
 data Suit = Club | Diamond | Heart | Spade
   deriving (Enum, Eq, Ord, Data, Typeable, Generic)
 
+-- | Representation of a playing card.
 data Card
   = Card
       { rank :: Rank,
@@ -21,17 +24,22 @@ data Card
       }
   deriving (Eq, Data, Typeable, Generic)
 
+-- | A 'Holding' is the hand that a player was dealt. Currently
+-- the 'Holding' type is only for holdem poker
 data Holding
   = Holdem Card Card
   deriving (Eq, Ord, Generic)
 
+
+-- | A 'ShapedHand' represents the canonical representation of a
+-- poker hand. For example, (King Diamonds, Five Heart), would
 data ShapedHand = ShapedHand (Rank, Rank) Shape
   deriving (Eq, Ord, Generic)
 
 data Shape = Offsuit | Suited | Pair
   deriving (Eq, Ord, Enum, Generic)
 
-data Deck = Deck [Card]
+newtype Deck = Deck [Card]
 
 instance Show Suit where
   show Club = "c"
@@ -63,7 +71,7 @@ instance Show Rank where
     Ace -> "A"
 
 instance Read Rank where
-  readPrec = get <&> chrToRank >>= maybe pfail pure
+  readPrec = get >>= maybe pfail pure . chrToRank
     where
       chrToRank :: Char -> Maybe Rank
       chrToRank = \case
@@ -89,7 +97,7 @@ instance Show Shape where
     Suited -> "s"
 
 instance Read Shape where
-  readPrec = get <&> chrToShape >>= maybe pfail pure
+  readPrec = get >>= maybe pfail pure . chrToShape
     where
       chrToShape :: Char -> Maybe Shape
       chrToShape = \case

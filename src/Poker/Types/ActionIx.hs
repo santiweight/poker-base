@@ -3,19 +3,22 @@ module Poker.Types.ActionIx where
 import Data.Data
 import GHC.Generics
 
-data IxRange
+-- | An index for numbers indicates the range of accepted values
+data IxRange t
   = AnyRn
-  | BetweenRn Double Double
-  | AboveRn Double
-  | BelowRn Double
+  | BetweenRn t t
+  | AboveRn t
+  | BelowRn t
+  | ExactlyRn t
   deriving (Show, Eq, Ord, Data, Typeable, Generic)
 
-data ActionIx
+-- | An index for matching 'PlayerAction's
+data ActionIx t
   = AnyIx
-  | RaiseIx IxRange
-  | AllInIx IxRange
-  | BetIx IxRange
-  | RaiseOrAllInIx IxRange
+  | RaiseIx (IxRange t)
+  | AllInIx (IxRange t)
+  | BetIx (IxRange t)
+  | RaiseOrAllInIx (IxRange t)
   | CheckIx
   | CallIx
   | FoldIx

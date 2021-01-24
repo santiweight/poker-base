@@ -37,19 +37,19 @@ instance Arbitrary Position where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary Action where
+instance Arbitrary t => Arbitrary (Action t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary BetAction where
+instance Arbitrary t => Arbitrary (BetAction t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary TableActionValue where
+instance Arbitrary t => Arbitrary (TableActionValue t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary PlayerAction where
+instance Arbitrary t => Arbitrary (PlayerAction t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
@@ -57,14 +57,14 @@ instance Arbitrary DealerAction where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary TableAction where
+instance Arbitrary t => Arbitrary (TableAction t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary ActionIx where
+instance Arbitrary t => Arbitrary (ActionIx t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary IxRange where
+instance Arbitrary t => Arbitrary (IxRange t) where
   arbitrary = genericArbitrary
   shrink = genericShrink

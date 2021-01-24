@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 -- {-# LANGUAGE FlexibleContexts #-}
@@ -32,6 +33,7 @@ import qualified Data.Map as Map
 import Data.Maybe
 import Data.Monoid (Sum (..))
 import Poker.Base
+import Poker.Types.IsBetSize
 
 newtype Range a b
   = Range
@@ -62,8 +64,8 @@ type CountRange = Range Holding Count
 type ShapedCountRange = Range ShapedHand Count
 type ShapedRange = Range ShapedHand CountRange
 type FreqShapedRange = Range ShapedHand FreqRange
-type ShapedRangeC = RangeCollection BetAction ShapedRange
-type IndexedRangeC = RangeCollection ActionIx FreqShapedRange
+type ShapedRangeC t = RangeCollection (BetAction t) ShapedRange
+type IndexedRangeC t = RangeCollection (ActionIx t) FreqShapedRange
 
 instance (Show a, Show b) => Show (Range a b) where
   show ran =
@@ -74,24 +76,25 @@ instance (Show a, Show b) => Show (Range a b) where
 $(makeLenses ''Range)
 $(makeLenses ''RangeCollection)
 
-holdingRangeToShapedRange :: Range Holding [BetAction] -> Range ShapedHand (Range Holding [BetAction])
+holdingRangeToShapedRange :: Eq t => Range Holding [BetAction t] -> Range ShapedHand (Range Holding [BetAction t])
 holdingRangeToShapedRange (Range r) = Range $ Map.foldrWithKey combine mempty r
   where
     combine ::
+      Eq t =>
       Holding ->
-      [BetAction] ->
-      Map ShapedHand (Range Holding [BetAction]) ->
-      Map ShapedHand (Range Holding [BetAction])
+      [BetAction t] ->
+      Map ShapedHand (Range Holding [BetAction t]) ->
+      Map ShapedHand (Range Holding [BetAction t])
     combine holding acts seed =
       seed
         & at (comboToShaped holding) . non mempty . range . at holding %~ Just . maybe acts (acts <>)
 
-shapedRangeToFreqRange :: (BetAction -> Bool) -> Range ShapedHand (Range Holding [BetAction])
+shapedRangeToFreqRange :: (BetAction t -> Bool) -> Range ShapedHand (Range Holding [BetAction t])
   -> Range ShapedHand (Range Holding (Int, Int))
 shapedRangeToFreqRange prop ran =
   ran & range . each %~ flatten :: Range ShapedHand (Range Holding (Int, Int))
   where
-    flatten :: Range Holding [BetAction] -> Range Holding (Int, Int)
+    -- flatten :: Range Holding [BetAction t] -> Range Holding (Int, Int)
     flatten (Range r) = Range $ r & each %~ (\ls -> (length (filter prop ls), length ls))
 
 shapedHoldingRangeToShapedFreqRange :: Range ShapedHand (Range Holding (Int, Int)) -> Range ShapedHand (Int, Int)
@@ -172,12 +175,12 @@ shapeToCombos (ShapedHand (r1, r2) shape) =
 --             Map.mapWithKey (\c n -> fromIntegral n / fromIntegral (cc ! c)) (count_range ^. range)
 --         }
 
-findRange :: ActionIx -> RangeCollection BetAction ShapedRange -> ShapedRange
+findRange :: IsBetSize t => ActionIx t -> RangeCollection (BetAction t) ShapedRange -> ShapedRange
 findRange indx ranC =
   let unionF = unionIndexRange indx
    in Map.foldlWithKey unionF mempty (ranC ^. ranges)
 
-unionIndexRange :: ActionIx -> ShapedRange -> BetAction -> ShapedRange -> ShapedRange
+unionIndexRange :: IsBetSize t => ActionIx t -> ShapedRange -> BetAction t -> ShapedRange -> ShapedRange
 unionIndexRange indx resRange k ran =
   if inIndex indx k
     then

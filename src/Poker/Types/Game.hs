@@ -49,7 +49,7 @@ data Position = UTG | UTG1 | UTG2 | BU | SB | BB
   deriving (Read, Show, Enum, Eq, Ord, Data, Typeable, Generic)
 
 data GameType = Zone | Cash
-  deriving (Show, Eq, Read, Generic)
+  deriving (Show, Eq, Ord, Read, Generic)
 
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
@@ -141,7 +141,7 @@ data Player
         _stack :: Double,
         _seat :: Seat
       }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 data Hand
   = Hand
@@ -155,7 +155,7 @@ data Hand
         _handActions :: [Action],
         _handText :: String
       }
-  deriving (Show, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 data Board where
   RiverBoard :: Card -> Board -> Board
@@ -163,10 +163,10 @@ data Board where
   FlopBoard :: (Card, Card, Card) -> Board -> Board
   PreFlopBoard :: Board -> Board
   InitialTable :: Board
-  deriving Eq
+  deriving (Eq, Ord)
 
 newtype Stake = Stake { getStake :: Double }
-  deriving (Read, Show, Eq)
+  deriving (Read, Show, Eq, Ord)
 
 instance Show Board where
   show InitialTable = "InitialBoard"

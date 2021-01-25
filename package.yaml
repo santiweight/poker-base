@@ -37,6 +37,7 @@ dependencies:
 - lens
 - prettyprinter
 - QuickCheck
+- range
 - tasty
 - tasty-discover
 - tasty-hspec

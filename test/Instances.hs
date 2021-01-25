@@ -4,6 +4,8 @@ module Instances where
 import Test.Tasty.QuickCheck
 import Test.QuickCheck.Arbitrary.Generic
 import Poker.Base
+import qualified Data.Range.Range
+import GHC.Generics (Generic)
 
 instance Arbitrary Rank where
   arbitrary = genericArbitrary
@@ -61,10 +63,14 @@ instance Arbitrary t => Arbitrary (TableAction t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary t => Arbitrary (ActionIx t) where
+instance Arbitrary a => Arbitrary (Data.Range.Range.Range a) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary t => Arbitrary (IxRange t) where
+instance Arbitrary a => Arbitrary (ActionIx a) where
+  arbitrary = genericArbitrary
+  shrink = genericShrink
+
+instance Arbitrary a => Arbitrary (IxRange a) where
   arbitrary = genericArbitrary
   shrink = genericShrink

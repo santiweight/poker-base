@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f61a107fc8013228cb74f3d96990c1e4fae6dade8cc2457be3f66f6fb47bedca
+-- hash: 605beb35d294ce72cab43aee96558bcd23e45d2053c35e410a58702291c682d2
 
 name:           poker-base
 version:        0.1.0.0
@@ -49,6 +49,7 @@ library
     , generic-arbitrary
     , lens
     , prettyprinter
+    , range
     , tasty
     , tasty-discover
     , tasty-hspec
@@ -79,6 +80,7 @@ test-suite test
     , lens
     , poker-base
     , prettyprinter
+    , range
     , tasty
     , tasty-discover
     , tasty-hspec

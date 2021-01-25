@@ -64,8 +64,8 @@ type CountRange = Range Holding Count
 type ShapedCountRange = Range ShapedHand Count
 type ShapedRange = Range ShapedHand CountRange
 type FreqShapedRange = Range ShapedHand FreqRange
-type ShapedRangeC t = RangeCollection (BetAction t) ShapedRange
-type IndexedRangeC t = RangeCollection (ActionIx t) FreqShapedRange
+type ShapedRangeC = RangeCollection (BetAction Double) ShapedRange
+type IndexedRangeC = RangeCollection (ActionIx Double) FreqShapedRange
 
 instance (Show a, Show b) => Show (Range a b) where
   show ran =
@@ -175,12 +175,12 @@ shapeToCombos (ShapedHand (r1, r2) shape) =
 --             Map.mapWithKey (\c n -> fromIntegral n / fromIntegral (cc ! c)) (count_range ^. range)
 --         }
 
-findRange :: IsBetSize t => ActionIx t -> RangeCollection (BetAction t) ShapedRange -> ShapedRange
+findRange :: ActionIx Double -> RangeCollection (BetAction Double) ShapedRange -> ShapedRange
 findRange indx ranC =
   let unionF = unionIndexRange indx
    in Map.foldlWithKey unionF mempty (ranC ^. ranges)
 
-unionIndexRange :: IsBetSize t => ActionIx t -> ShapedRange -> BetAction t -> ShapedRange -> ShapedRange
+unionIndexRange :: ActionIx Double -> ShapedRange -> BetAction Double -> ShapedRange -> ShapedRange
 unionIndexRange indx resRange k ran =
   if inIndex indx k
     then

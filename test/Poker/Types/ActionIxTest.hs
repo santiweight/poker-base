@@ -5,7 +5,7 @@ import Control.Applicative (Applicative(liftA2))
 import Instances
 import Poker.Base (IxRange)
 import Debug.Trace (traceShow, traceShowM)
-import Poker.Types.ActionIx (exactlyRn, anyRn)
+import Poker.Types.ActionIx (exactlyRn, anyRn, addRange)
 -- import Poker.Types.ActionIx (anyRn)
 
 prop_addRangeAssoc :: IxRange Double -> IxRange Double -> Property

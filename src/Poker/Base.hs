@@ -17,7 +17,7 @@ module Poker.Base
 import Control.Monad (guard)
 import Data.List (sort)
 import Poker.Types
-import Poker.Types.IsBetSize (inRange, IsBetSize(sub))
+import Poker.Types.IsBetSize (IsBetSize(sub))
 
 isTableAction :: Action t -> Bool
 isTableAction act = case act of
@@ -34,8 +34,7 @@ isDealerAction act = case act of
   MkDealerAction _ -> True
   _ -> False
 
-inIndex :: IsBetSize t => ActionIx t -> BetAction t -> Bool
--- inIndex = undefined
+inIndex :: (ActionIx Double) -> BetAction Double -> Bool
 inIndex AnyIx _ = True
 inIndex CheckIx Check = True
 inIndex (RaiseIx range) (Raise from to) = inRange range (to `sub` from)

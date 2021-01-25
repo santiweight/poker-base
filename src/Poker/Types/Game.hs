@@ -140,7 +140,7 @@ data Player t
         _stack :: t,
         _seat :: Seat
       }
-  deriving (Show, Eq, Generic, Functor)
+  deriving (Show, Eq, Ord, Generic, Functor)
 
 data Hand t
   = Hand

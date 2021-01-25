@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9fc214dca8eb8d720002a034c44c02ed30ba616e62536ea59f34e4b2765662a4
+-- hash: f61a107fc8013228cb74f3d96990c1e4fae6dade8cc2457be3f66f6fb47bedca
 
 name:           poker-base
 version:        0.1.0.0
@@ -57,12 +57,13 @@ library
     , time
   default-language: Haskell2010
 
-test-suite exploit-poker-test
+test-suite test
   type: exitcode-stdio-1.0
   main-is: Driver.hs
   other-modules:
       Base
       Instances
+      Poker.Types.ActionIxTest
       Paths_poker_base
   hs-source-dirs:
       test

@@ -10,7 +10,7 @@ data IxRange t
   | AboveRn t
   | BelowRn t
   | ExactlyRn t
-  deriving (Show, Eq, Ord, Data, Typeable, Generic)
+  deriving (Show, Eq, Ord, Data, Typeable, Generic, Foldable, Functor, Traversable)
 
 -- | An index for matching 'PlayerAction's
 data ActionIx t
@@ -23,5 +23,5 @@ data ActionIx t
   | CallIx
   | FoldIx
   | LeaveIx
-  deriving (Show, Eq, Ord, Data, Typeable, Generic)
+  deriving (Show, Eq, Ord, Data, Typeable, Generic, Foldable, Functor, Traversable)
 

@@ -17,7 +17,7 @@ library:
   - -Wall
 
 tests:
-  exploit-poker-test:
+  test:
     source-dirs:
     - test
     main: Driver.hs

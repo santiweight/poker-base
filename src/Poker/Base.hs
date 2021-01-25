@@ -18,6 +18,7 @@ import Control.Monad (guard)
 import Data.List (sort)
 import Poker.Types
 import Poker.Types.IsBetSize (IsBetSize(sub))
+import Algebra.PartialOrd (PartialOrd)
 
 isTableAction :: Action t -> Bool
 isTableAction act = case act of
@@ -33,18 +34,6 @@ isDealerAction :: Action t -> Bool
 isDealerAction act = case act of
   MkDealerAction _ -> True
   _ -> False
-
-inIndex :: (ActionIx Double) -> BetAction Double -> Bool
-inIndex AnyIx _ = True
-inIndex CheckIx Check = True
-inIndex (RaiseIx range) (Raise from to) = inRange range (to `sub` from)
-inIndex (RaiseOrAllInIx range) (Raise from to) = inRange range (to `sub` from)
-inIndex (RaiseOrAllInIx range) (AllIn bet) = inRange range bet
-inIndex (AllInIx range) (AllIn allIn) = inRange range allIn
-inIndex (BetIx range) (Bet bet) = inRange range bet
-inIndex CallIx (Call _) = True
-inIndex FoldIx Fold = True
-inIndex _ _ = False
 
 atPosition :: Position -> PlayerAction t -> Bool
 atPosition pos = (pos ==) . position
@@ -137,4 +126,17 @@ newShapedHand (rank1, rank2) shape
 --     , show . _handStakes $ hand
 --     , indent <$> unlines $ show <$> _handActions hand
 --     ]
+
+inIndex :: (PartialOrd b, IsBetSize b) => ActionIx b -> BetAction b -> Bool
+inIndex AnyIx _ = True
+inIndex CheckIx Check = True
+inIndex (RaiseIx range) (Raise from to) = inRange range (to `sub` from)
+inIndex (RaiseOrAllInIx range) (Raise from to) = inRange range (to `sub` from)
+inIndex (RaiseOrAllInIx range) (AllIn bet) = inRange range bet
+inIndex (AllInIx range) (AllIn allIn) = inRange range allIn
+inIndex (BetIx range) (Bet bet) = inRange range bet
+inIndex CallIx (Call _) = True
+inIndex FoldIx Fold = True
+inIndex _ _ = False
+
 

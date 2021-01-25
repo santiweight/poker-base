@@ -9,4 +9,4 @@ import Poker.Types.ActionIx (exactlyRn, anyRn, addRange)
 -- import Poker.Types.ActionIx (anyRn)
 
 prop_addRangeAssoc :: IxRange Double -> IxRange Double -> Property
-prop_addRangeAssoc l r = withMaxSuccess 100000 $ addRange (+) l r ===  addRange (+) r l
+prop_addRangeAssoc l r = withMaxSuccess 100000 $ addRange l r ===  addRange r l

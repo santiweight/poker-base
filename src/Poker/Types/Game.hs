@@ -44,11 +44,12 @@ module Poker.Types.Game where
   -- ) where
 
 import Poker.Types.Cards
-import Control.Lens
+import Control.Lens ( makeLenses )
 import Data.Data
 import Data.Map (Map)
 import Data.Time.LocalTime (LocalTime (..))
 import GHC.Generics
+import Poker.Types.ActionIx
 
 data Position = UTG | UTG1 | UTG2 | BU | SB | BB
   deriving (Read, Show, Enum, Eq, Ord, Data, Typeable, Generic)
@@ -87,7 +88,7 @@ data BetAction t
   | Check
   | CheckTimeOut
   | OtherAction -- TODO remove
-  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
+  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic, Functor)
 
 data PlayerAction t
   = PlayerAction
@@ -176,4 +177,16 @@ instance Show Board where
 
 makeLenses ''Player
 makeLenses ''Hand
+
+data ActionIx b
+  = AnyIx
+  | RaiseIx (IxRange b)
+  | AllInIx (IxRange b)
+  | BetIx (IxRange b)
+  | RaiseOrAllInIx (IxRange b)
+  | CheckIx
+  | CallIx
+  | FoldIx
+  | LeaveIx
+  deriving (Show, Eq, Data, Typeable, Generic, Functor)
 

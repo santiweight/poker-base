@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 605beb35d294ce72cab43aee96558bcd23e45d2053c35e410a58702291c682d2
+-- hash: 59fd2586e0237eb23ca7b27c221482b7c09610cdeb26d499ad57e06b386fecc1
 
 name:           poker-base
 version:        0.1.0.0
@@ -47,6 +47,7 @@ library
     , containers
     , deriving-compat
     , generic-arbitrary
+    , lattices
     , lens
     , prettyprinter
     , range
@@ -77,6 +78,7 @@ test-suite test
     , containers
     , deriving-compat
     , generic-arbitrary
+    , lattices
     , lens
     , poker-base
     , prettyprinter

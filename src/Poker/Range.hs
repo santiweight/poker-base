@@ -25,6 +25,7 @@ module Poker.Range
     , addCombo
     ) where
 
+import Algebra.PartialOrd.Instances
 import Control.Lens
 import Data.Aeson
 import Data.List
@@ -34,6 +35,7 @@ import Data.Maybe
 import Data.Monoid (Sum (..))
 import Poker.Base
 import Poker.Types.IsBetSize
+import Algebra.Lattice.Ordered (Ordered(Ordered))
 
 newtype Range a b
   = Range
@@ -182,7 +184,7 @@ findRange indx ranC =
 
 unionIndexRange :: ActionIx Double -> ShapedRange -> BetAction Double -> ShapedRange -> ShapedRange
 unionIndexRange indx resRange k ran =
-  if inIndex indx k
+  if inIndex (Ordered <$> indx) (Ordered <$> k)
     then
       resRange -- & count +~ ran ^. count
         & range %~ Map.unionWith combineCountRanges (ran ^. range)

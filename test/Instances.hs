@@ -63,10 +63,6 @@ instance Arbitrary t => Arbitrary (TableAction t) where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary a => Arbitrary (Data.Range.Range.Range a) where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
 instance Arbitrary a => Arbitrary (ActionIx a) where
   arbitrary = genericArbitrary
   shrink = genericShrink

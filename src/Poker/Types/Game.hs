@@ -49,7 +49,6 @@ import Data.Data
 import Data.Map (Map)
 import Data.Time.LocalTime (LocalTime (..))
 import GHC.Generics
-import Poker.Types.ActionIx
 
 data Position = UTG | UTG1 | UTG2 | BU | SB | BB
   deriving (Read, Show, Enum, Eq, Ord, Data, Typeable, Generic)
@@ -66,7 +65,7 @@ data Network = Bovada | PokerStars | Unknown
   deriving (Read, Show, Enum, Eq, Ord, Generic)
 
 newtype PotSize b = PotSize b
-  deriving (Show, Eq, Ord, Num)
+  deriving (Show, Eq, Ord, Num, Functor)
 
 newtype StackSize b = StackSize b
   deriving (Show, Eq, Ord, Num)
@@ -96,12 +95,12 @@ data PlayerAction t
         action :: BetAction t,
         isHero :: IsHero
       }
-  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
+  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic, Functor)
 
 data TableAction t
   = TableAction Position (TableActionValue t)
   | UnknownAction
-  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
+  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic, Functor)
 
 data TableActionValue t
   = Post t
@@ -116,7 +115,7 @@ data TableActionValue t
   | Rejoin
   | Return t
   | Result t
-  deriving (Read, Show, Ord, Eq, Data, Typeable, Generic)
+  deriving (Read, Show, Ord, Eq, Data, Typeable, Generic, Functor)
 
 -- TODO Fix the below to become the above
 data DealerAction
@@ -131,7 +130,7 @@ data Action t
   = MkPlayerAction (PlayerAction t)
   | MkDealerAction DealerAction
   | MkTableAction (TableAction t)
-  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic)
+  deriving (Read, Show, Eq, Ord, Data, Typeable, Generic, Functor)
 
 data Player t
   = Player
@@ -155,7 +154,7 @@ data Hand t
         _handActions :: [Action t],
         _handText :: String
       }
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Functor)
 
 data Board where
   RiverBoard :: Card -> Board -> Board
@@ -177,16 +176,3 @@ instance Show Board where
 
 makeLenses ''Player
 makeLenses ''Hand
-
-data ActionIx b
-  = AnyIx
-  | RaiseIx (IxRange b)
-  | AllInIx (IxRange b)
-  | BetIx (IxRange b)
-  | RaiseOrAllInIx (IxRange b)
-  | CheckIx
-  | CallIx
-  | FoldIx
-  | LeaveIx
-  deriving (Show, Eq, Data, Typeable, Generic, Functor)
-

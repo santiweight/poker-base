@@ -17,8 +17,6 @@ module Poker.Base
 import Control.Monad (guard)
 import Data.List (sort)
 import Poker.Types
-import Poker.Types.IsBetSize (IsBetSize(sub))
-import Algebra.PartialOrd (PartialOrd)
 
 isTableAction :: Action t -> Bool
 isTableAction act = case act of
@@ -127,16 +125,23 @@ newShapedHand (rank1, rank2) shape
 --     , indent <$> unlines $ show <$> _handActions hand
 --     ]
 
-inIndex :: (PartialOrd b, IsBetSize b) => ActionIx b -> BetAction b -> Bool
+inIndex :: (IsBetSize b) => ActionIx b -> BetAction b -> Bool
 inIndex AnyIx _ = True
 inIndex CheckIx Check = True
-inIndex (RaiseIx range) (Raise from to) = inRange range (to `sub` from)
-inIndex (RaiseOrAllInIx range) (Raise from to) = inRange range (to `sub` from)
-inIndex (RaiseOrAllInIx range) (AllIn bet) = inRange range bet
-inIndex (AllInIx range) (AllIn allIn) = inRange range allIn
-inIndex (BetIx range) (Bet bet) = inRange range bet
+inIndex (RaiseIx range) (Raise from to) = (to `sub` from) `within` range
+inIndex (RaiseOrAllInIx range) (Raise from to) = within (to `sub` from) range
+inIndex (RaiseOrAllInIx range) (AllIn bet) = within bet range
+inIndex (AllInIx range) (AllIn allIn) = within allIn range
+inIndex (BetIx range) (Bet bet) = within bet range
 inIndex CallIx (Call _) = True
 inIndex FoldIx Fold = True
 inIndex _ _ = False
 
 
+
+-- inRangeAny :: IsBetSize a => IxRange a -> a -> Bool
+-- inRangeAny (BetweenRn low up) bet = low `below` bet && bet `below` up
+-- inRangeAny (ExactlyRn amount) bet = bet == amount
+-- inRangeAny (AboveRn low) bet = low `leq` bet
+-- inRangeAny (BelowRn up) bet = bet `leq` up
+-- inRangeAny AnyRn _ = True

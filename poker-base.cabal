@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 59fd2586e0237eb23ca7b27c221482b7c09610cdeb26d499ad57e06b386fecc1
+-- hash: 0b40b19712b944dda4066804855a7542551bba14ec7b1eee24864062efeec621
 
 name:           poker-base
 version:        0.1.0.0
@@ -33,7 +33,6 @@ library
       Poker.Types.ActionIx
       Poker.Types.Cards
       Poker.Types.Game
-      Poker.Types.IsBetSize
   other-modules:
       Paths_poker_base
   hs-source-dirs:

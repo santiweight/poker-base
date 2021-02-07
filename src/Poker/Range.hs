@@ -34,7 +34,6 @@ import qualified Data.Map as Map
 import Data.Maybe
 import Data.Monoid (Sum (..))
 import Poker.Base
-import Poker.Types.IsBetSize
 import Algebra.Lattice.Ordered (Ordered(Ordered))
 
 newtype Range a b

@@ -25,7 +25,7 @@ module Poker.Range
     , addCombo
     ) where
 
-import Algebra.PartialOrd.Instances
+import Algebra.PartialOrd.Instances ()
 import Control.Lens
 import Data.Aeson
 import Data.List

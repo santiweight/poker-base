@@ -5,10 +5,6 @@ module Poker.Types.ActionIx where
 
 import Data.Data
 import GHC.Generics
-import qualified Data.Range.Range as Data.Range
-import Data.Ratio ((%), Ratio)
-import Debug.Trace (traceShow)
-import qualified Algebra.PartialOrd as POrd
 import Algebra.PartialOrd (PartialOrd(leq))
 import Poker.Types.Game
 import Algebra.Lattice.Ordered (Ordered(Ordered, getOrdered))
@@ -54,6 +50,9 @@ instance IsBetSize (Ordered Double) where
   sub = liftA2 (\l r -> roundToDecs 2 $ l - r)
   times = liftA2 (\l r -> roundToDecs 2 $ l * r)
   empty = Ordered 0
+  below = undefined
+  above = undefined
+  toPotSizeRelative = undefined
   within (getOrdered->l) (fmap getOrdered->r) = inRange l r
 
 {-
@@ -67,6 +66,11 @@ instance (Ord a, Num a) => IsBetSize (IxRange a) where
   plus = addRange
   sub = subRange
   empty = exactlyRn 0
+  within = undefined
+  below = undefined
+  above = undefined
+  times = undefined
+  toPotSizeRelative = undefined
   -- within = inIndex
 
 
@@ -96,40 +100,40 @@ addRange AnyRn _     = AnyRn
 addRange _     AnyRn = AnyRn
 addRange (ExactlyRn amount1) (ExactlyRn amount2) = AboveRn $ amount1 + amount2
 addRange (ExactlyRn amount) (BetweenRn l u) = BetweenRn (l + amount) (u + amount)
-addRange (ExactlyRn amount) (BelowRn below) = BetweenRn amount (below + amount)
-addRange (ExactlyRn amount) (AboveRn above) = AboveRn $ amount + above
+addRange (ExactlyRn amount) (BelowRn bel) = BetweenRn amount (bel + amount)
+addRange (ExactlyRn amount) (AboveRn ab) = AboveRn $ amount + ab
 addRange (BetweenRn l u) (ExactlyRn amount) = BetweenRn (l + amount) (u + amount)
 addRange (BetweenRn l1 u1) (BetweenRn l2 u2) = BetweenRn (l1 + l2) (u1 + u2)
-addRange (BetweenRn l _) (AboveRn above) = AboveRn (l + above)
-addRange (BetweenRn l u) (BelowRn below) = BetweenRn l (u + below)
-addRange (BelowRn below) (ExactlyRn amount) = BetweenRn amount (below + amount)
-addRange (BelowRn below) (BetweenRn l u) = BetweenRn l (u + below)
-addRange (BelowRn _    ) (AboveRn above) = AboveRn above
-addRange (BelowRn below1) (BelowRn below2) = BelowRn $ below1 + below2
-addRange (AboveRn above) (ExactlyRn amount) = AboveRn $ above + amount
-addRange (AboveRn above) (BetweenRn l _) = AboveRn (l + above)
-addRange (AboveRn above) (BelowRn _    ) = AboveRn above
-addRange (AboveRn above1) (AboveRn above2) = AboveRn $ above1 + above2
+addRange (BetweenRn l _) (AboveRn ab) = AboveRn (l + ab)
+addRange (BetweenRn l u) (BelowRn bel) = BetweenRn l (u + bel)
+addRange (BelowRn bel) (ExactlyRn amount) = BetweenRn amount (bel + amount)
+addRange (BelowRn bel) (BetweenRn l u) = BetweenRn l (u + bel)
+addRange (BelowRn _    ) (AboveRn ab) = AboveRn ab
+addRange (BelowRn bel1) (BelowRn bel2) = BelowRn $ bel1 + bel2
+addRange (AboveRn ab) (ExactlyRn amount) = AboveRn $ ab + amount
+addRange (AboveRn ab) (BetweenRn l _) = AboveRn (l + ab)
+addRange (AboveRn ab) (BelowRn _    ) = AboveRn ab
+addRange (AboveRn ab1) (AboveRn ab2) = AboveRn $ ab1 + ab2
 
 subRange :: Num a => IxRange a -> IxRange a -> IxRange a
 subRange AnyRn _     = AnyRn
 subRange _     AnyRn = AnyRn
 subRange (ExactlyRn amount1) (ExactlyRn amount2) = AboveRn $ amount1 - amount2
 subRange (ExactlyRn amount) (BetweenRn l u) = BetweenRn (l - amount) (u - amount)
-subRange (ExactlyRn amount) (BelowRn below) = BetweenRn amount (below - amount)
-subRange (ExactlyRn amount) (AboveRn above) = AboveRn $ amount - above
+subRange (ExactlyRn amount) (BelowRn bel) = BetweenRn amount (bel - amount)
+subRange (ExactlyRn amount) (AboveRn ab) = AboveRn $ amount - ab
 subRange (BetweenRn l1 u1) (BetweenRn l2 u2) =
   BetweenRn (l1 - u2) (u1 - l2)
 subRange (BetweenRn l u) (ExactlyRn amount) = BetweenRn (l - amount) (u - amount)
-subRange (BetweenRn _ u ) (AboveRn above ) = BelowRn (u - above)
-subRange (BetweenRn l u ) (BelowRn below ) = BetweenRn l (u - below)
-subRange (BelowRn below ) (ExactlyRn amount) = BelowRn (below - amount)
-subRange (BelowRn below ) (BetweenRn l u ) = BetweenRn l (u - below)
-subRange (BelowRn _     ) (AboveRn above ) = AboveRn above
-subRange (BelowRn below1) (BelowRn _     ) = BelowRn below1
-subRange (AboveRn above ) (ExactlyRn amount) = AboveRn (above - amount)
-subRange (AboveRn above ) (BetweenRn l u ) = BetweenRn (l - above) u
-subRange (AboveRn above ) (BelowRn _     ) = AboveRn above
+subRange (BetweenRn _ u ) (AboveRn ab ) = BelowRn (u - ab)
+subRange (BetweenRn l u ) (BelowRn bel ) = BetweenRn l (u - bel)
+subRange (BelowRn bel ) (ExactlyRn amount) = BelowRn (bel - amount)
+subRange (BelowRn bel ) (BetweenRn l u ) = BetweenRn l (u - bel)
+subRange (BelowRn _     ) (AboveRn ab ) = AboveRn ab
+subRange (BelowRn bel1) (BelowRn _     ) = BelowRn bel1
+subRange (AboveRn ab ) (ExactlyRn amount) = AboveRn (ab - amount)
+subRange (AboveRn ab ) (BetweenRn l u ) = BetweenRn (l - ab) u
+subRange (AboveRn ab ) (BelowRn _     ) = AboveRn ab
 subRange (AboveRn above1) (AboveRn above2) = AboveRn $ above1 - above2
 
 -- getRelativePotSize :: forall a. (a -> a -> a) -> IxRange a -> IxRange a -> IxRange (Ratio a)

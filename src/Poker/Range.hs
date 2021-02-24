@@ -6,24 +6,7 @@
 -- {-# LANGUAGE FlexibleContexts #-}
 -- {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Poker.Range
-    ( Range(..), range
-    , RangeCollection(..), ranges, total_range, total_shapedrange
-    , CountRange
-    , FreqRange
-    , ShapedRangeC
-    , ShapedRange
-    , addComboToCollection
-    , shapedRangeToFreqRange
-    , shapedHoldingRangeToShapedFreqRange
-    -- , rangeToFreqRange
-    , shapeToCombos
-    , findRange
-    , holdingRangeToShapedRange
-    , combineCountRanges
-    , IndexedRangeC
-    , addCombo
-    ) where
+module Poker.Range where
 
 import Algebra.PartialOrd.Instances ()
 import Control.Lens
@@ -176,14 +159,14 @@ shapeToCombos (ShapedHand (r1, r2) shape) =
 --             Map.mapWithKey (\c n -> fromIntegral n / fromIntegral (cc ! c)) (count_range ^. range)
 --         }
 
-findRange :: ActionIx Double -> RangeCollection (BetAction Double) ShapedRange -> ShapedRange
+findRange :: ActionIx BetSize -> RangeCollection (BetAction BetSize) ShapedRange -> ShapedRange
 findRange indx ranC =
   let unionF = unionIndexRange indx
    in Map.foldlWithKey unionF mempty (ranC ^. ranges)
 
-unionIndexRange :: ActionIx Double -> ShapedRange -> BetAction Double -> ShapedRange -> ShapedRange
+unionIndexRange :: ActionIx BetSize -> ShapedRange -> BetAction BetSize -> ShapedRange -> ShapedRange
 unionIndexRange indx resRange k ran =
-  if inIndex (Ordered <$> indx) (Ordered <$> k)
+  if inIndex indx k
     then
       resRange -- & count +~ ran ^. count
         & range %~ Map.unionWith combineCountRanges (ran ^. range)

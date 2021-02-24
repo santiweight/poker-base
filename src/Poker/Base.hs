@@ -125,11 +125,11 @@ newShapedHand (rank1, rank2) shape
 --     , indent <$> unlines $ show <$> _handActions hand
 --     ]
 
-inIndex :: (IsBetSize b) => ActionIx b -> BetAction b -> Bool
+inIndex :: (IsBetSize b) => ActionIx BetSize -> BetAction b -> Bool
 inIndex AnyIx _ = True
 inIndex CheckIx Check = True
-inIndex (RaiseIx range) (Raise from to) = (to `sub` from) `within` range
-inIndex (RaiseOrAllInIx range) (Raise from to) = within (to `sub` from) range
+inIndex (RaiseIx range) (Raise from to) = (to - from) `within` range
+inIndex (RaiseOrAllInIx range) (Raise from to) = within (to - from) range
 inIndex (RaiseOrAllInIx range) (AllIn bet) = within bet range
 inIndex (AllInIx range) (AllIn allIn) = within allIn range
 inIndex (BetIx range) (Bet bet) = within bet range

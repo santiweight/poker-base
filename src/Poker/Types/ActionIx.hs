@@ -1,17 +1,19 @@
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 module Poker.Types.ActionIx where
 
-import Data.Data
-import GHC.Generics
+import Data.Data ( Data, Typeable )
+import GHC.Generics ( Generic )
 import Algebra.PartialOrd (PartialOrd(leq))
-import Poker.Types.Game
-import Algebra.Lattice.Ordered (Ordered(Ordered, getOrdered))
-import Control.Applicative (Applicative(liftA2))
+import Poker.Types.Game ( BetAction, PotSize(..), BetSize )
 
 data ActionIx b
-  = AnyIx
+  = MatchesBet (BetAction (IxRange b))
+  | AnyIx
   | RaiseIx (IxRange b)
   | AllInIx (IxRange b)
   | BetIx (IxRange b)
@@ -22,65 +24,43 @@ data ActionIx b
   | LeaveIx
   deriving (Show, Eq, Data, Typeable, Generic, Functor)
 
-class IsBetSize b where
-  plus :: b -> b -> b
-  sub :: b -> b -> b
-  times :: b -> b -> b
-  empty :: b
-  below :: b -> IxRange b -> Bool
-  above :: b -> IxRange b -> Bool
-  within :: b -> IxRange b -> Bool
-  toPotSizeRelative :: PotSize b -> b -> b
+class (PartialOrd b, Num b) => IsBetSize b where
+  within :: b -> IxRange BetSize -> Bool
 
-deriving instance IsBetSize t => IsBetSize (PotSize t)
+deriving instance (PartialOrd (PotSize b), IsBetSize b) => IsBetSize (PotSize b)
 
--- instance (Ord b, IsBetSize b) => IsBetSize (Ordered b) where
---   plus = liftA2 plus
---   sub = liftA2 sub
---   empty = Ordered empty
-
-{-
->>> 0.1 + 0.2
-0.30000000000000004
->>> flip roundTo 2 $ 0.1 + 0.2
-0.3
--}
-instance IsBetSize (Ordered Double) where
-  plus = liftA2 (\l r -> roundToDecs 2 $ l + r)
-  sub = liftA2 (\l r -> roundToDecs 2 $ l - r)
-  times = liftA2 (\l r -> roundToDecs 2 $ l * r)
-  empty = Ordered 0
-  below = undefined
-  above = undefined
-  toPotSizeRelative = undefined
-  within (getOrdered->l) (fmap getOrdered->r) = inRange l r
-
-{-
->>> roundTo
--}
-
-roundToDecs :: (RealFrac a, Fractional a) => Int -> a -> a
-roundToDecs places num = fromInteger (round (num * (10 ^ places))) / (10 ^ places)
+instance IsBetSize BetSize where
+  within l r = inRange l r
 
 instance (Ord a, Num a) => IsBetSize (IxRange a) where
-  plus = addRange
-  sub = subRange
-  empty = exactlyRn 0
   within = undefined
-  below = undefined
-  above = undefined
-  times = undefined
-  toPotSizeRelative = undefined
   -- within = inIndex
-
-
-  -- toPotSizeRelative (PotSize potSize) betSize = betSize / potSize
 
 data IxRange a = AnyRn | BetweenRn a a | AboveRn a | BelowRn a | ExactlyRn a
   deriving (Show, Eq, Data, Typeable, Generic, Functor)
 
-instance Ord a => PartialOrd (IxRange a) where
-  leq = undefined
+instance (Ord a, Num a) => PartialOrd (IxRange a) where
+  (ExactlyRn l) `leq` AnyRn = l == 0
+  (BelowRn l) `leq` AnyRn = l == 0
+  (AboveRn _) `leq` AnyRn = False
+  (BetweenRn _ l) `leq` AnyRn = l == 0
+  AnyRn `leq` _ = False
+  (ExactlyRn l) `leq` (ExactlyRn r) = l <= r
+  (ExactlyRn l) `leq` (BetweenRn r _) = l <= r
+  (ExactlyRn l) `leq` (BelowRn _) = l == 0
+  (ExactlyRn l) `leq` (AboveRn r) = l <= r
+  (BelowRn l) `leq` (ExactlyRn r) = l <= r
+  (BelowRn l) `leq` (BetweenRn r _) = l <= r
+  (BelowRn l) `leq` (BelowRn _) = l == 0
+  (BelowRn l) `leq` (AboveRn r) = l <= r
+  (BetweenRn _ l) `leq` (ExactlyRn r) = l <= r
+  (BetweenRn _ l) `leq` (BetweenRn r _) = l <= r
+  (BetweenRn _ l) `leq` (BelowRn _) = l == 0
+  (BetweenRn _ l) `leq` (AboveRn r) = l <= r
+  (AboveRn l) `leq` (ExactlyRn r) = l <= r
+  (AboveRn l) `leq` (BetweenRn r _) = l <= r
+  (AboveRn _) `leq` (BelowRn _) = False
+  (AboveRn l) `leq` (AboveRn r) = l <= r
 
 exactlyRn :: a -> IxRange a
 exactlyRn = ExactlyRn
@@ -88,17 +68,25 @@ exactlyRn = ExactlyRn
 anyRn :: IxRange a
 anyRn = AnyRn
 
-inRange :: Double -> IxRange Double -> Bool
-inRange bet (BetweenRn low up) = low <= bet && bet <= up
+inRange :: BetSize -> IxRange BetSize -> Bool
+inRange bet (BetweenRn low up) = low `leq` bet && bet `leq` up
 inRange bet (ExactlyRn amount) = bet == amount
-inRange bet (AboveRn low) = low <= bet
-inRange bet (BelowRn up) = bet <= up
+inRange bet (AboveRn low) = low `leq` bet
+inRange bet (BelowRn up) = bet `leq` up
 inRange _ AnyRn = True
+
+instance Num a => Num (IxRange a) where
+  (+) = addRange
+  (*) = undefined
+  abs = fmap abs
+  signum = fmap signum
+  fromInteger = ExactlyRn . fromInteger
+  negate = fmap negate
 
 addRange :: Num a => IxRange a -> IxRange a -> IxRange a
 addRange AnyRn _     = AnyRn
 addRange _     AnyRn = AnyRn
-addRange (ExactlyRn amount1) (ExactlyRn amount2) = AboveRn $ amount1 + amount2
+addRange (ExactlyRn amount1) (ExactlyRn amount2) = ExactlyRn $ amount1 + amount2
 addRange (ExactlyRn amount) (BetweenRn l u) = BetweenRn (l + amount) (u + amount)
 addRange (ExactlyRn amount) (BelowRn bel) = BetweenRn amount (bel + amount)
 addRange (ExactlyRn amount) (AboveRn ab) = AboveRn $ amount + ab
@@ -118,7 +106,7 @@ addRange (AboveRn ab1) (AboveRn ab2) = AboveRn $ ab1 + ab2
 subRange :: Num a => IxRange a -> IxRange a -> IxRange a
 subRange AnyRn _     = AnyRn
 subRange _     AnyRn = AnyRn
-subRange (ExactlyRn amount1) (ExactlyRn amount2) = AboveRn $ amount1 - amount2
+subRange (ExactlyRn amount1) (ExactlyRn amount2) = ExactlyRn $ amount1 - amount2
 subRange (ExactlyRn amount) (BetweenRn l u) = BetweenRn (l - amount) (u - amount)
 subRange (ExactlyRn amount) (BelowRn bel) = BetweenRn amount (bel - amount)
 subRange (ExactlyRn amount) (AboveRn ab) = AboveRn $ amount - ab

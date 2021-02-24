@@ -1,3 +1,5 @@
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -49,6 +51,30 @@ import Data.Data
 import Data.Map (Map)
 import Data.Time.LocalTime (LocalTime (..))
 import GHC.Generics
+import Algebra.PartialOrd (PartialOrd)
+import Algebra.Lattice.Ordered (Ordered(Ordered))
+
+newtype BetSize = BetSize { getBetSize :: Double }
+  deriving (Read, Show, Eq, Fractional, Data, Ord, Generic)
+  deriving PartialOrd via (Ordered Double)
+
+mkBetSize :: Double -> BetSize
+mkBetSize = BetSize . roundToDecs 2
+
+roundToDecs :: (RealFrac a, Fractional a) => Int -> a -> a
+roundToDecs places num = fromInteger (round (num * (10 ^ places))) / (10 ^ places)
+
+{-
+>>> 0.5 - 0.0 :: BetSize
+BetSize {getBetSize = 0.5}
+-}
+instance Num BetSize where
+  (BetSize l) + (BetSize r) = mkBetSize $ l + r
+  (BetSize l) * (BetSize r) = mkBetSize $ l * r
+  abs (BetSize amt) = mkBetSize $ abs amt
+  signum (BetSize amt) = mkBetSize $ abs amt
+  fromInteger amt = mkBetSize $ fromInteger amt
+  negate (BetSize amt) = mkBetSize $ negate amt
 
 data Position = UTG | UTG1 | UTG2 | BU | SB | BB
   deriving (Read, Show, Enum, Eq, Ord, Data, Typeable, Generic)
@@ -65,7 +91,7 @@ data Network = Bovada | PokerStars | Unknown
   deriving (Read, Show, Enum, Eq, Ord, Generic)
 
 newtype PotSize b = PotSize b
-  deriving (Show, Eq, Ord, Num, Functor)
+  deriving (Show, Eq, Ord, Num, Functor, PartialOrd)
 
 newtype StackSize b = StackSize b
   deriving (Show, Eq, Ord, Num)
@@ -164,8 +190,8 @@ data Board where
   InitialTable :: Board
   deriving (Eq, Ord)
 
-newtype Stake = Stake { getStake :: Double }
-  deriving (Read, Show, Eq, Ord)
+newtype Stake = Stake { getStake :: BetSize }
+  deriving (Read, Show, Eq)
 
 instance Show Board where
   show InitialTable = "InitialBoard"

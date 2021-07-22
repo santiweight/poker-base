@@ -34,31 +34,33 @@ prop_badCardRead = do
       Left  _ -> True
       Right _ -> False
 
-test_isoReadShow :: TestTree
-test_isoReadShow = testProperties "testing isomorphic read . show" $
-      [ ( "iso Holding"
-        , property $ \hold -> isValidHolding hold ==> testIsoReadShow hold)
-      , ( "iso Shape"
-        , property $ testIsoReadShow @Shape)
-      , ( "iso Rank"
-        , property $ testIsoReadShow @Rank)
-      , ( "iso Suit"
-        , property $ testIsoReadShow @Suit)
-      , ( "iso ShapedHand"
-        , property $ \sh -> isValidShapedHand sh ==> testIsoReadShow sh)
-      ]
-  where
-    isValidShapedHand :: ShapedHand -> Bool
-    isValidShapedHand (ShapedHand (r1, r2) shape) = if r1 == r2
-                                    then shape == Pair
-                                    else shape == Offsuit || shape == Suited
-    isValidHolding :: Holding -> Bool
-    isValidHolding (Holdem c1 c2) = c1 /= c2
+-- test_isoReadShow :: TestTree
+-- test_isoReadShow = testProperties "testing isomorphic read . show" $
+--       [ ( "iso Holding"
+--         , property $ \hold -> isValidHolding hold ==> testIsoReadShow hold)
+--       , ( "iso Shape"
+--         , property $ testIsoReadShow @Shape)
+--       , ( "iso Rank"
+--         , property $ testIsoReadShow @Rank)
+--       , ( "iso Suit"
+--         , property $ testIsoReadShow @Suit)
+--       , ( "iso ShapedHand"
+--         , property $ \sh -> isValidShapedHand sh ==> testIsoReadShow sh)
+--       ]
+--   where
+--     isValidShapedHand :: ShapedHand -> Bool
+--     isValidShapedHand (ShapedHand (r1, r2) shape) = if r1 == r2
+--                                     then shape == Pair
+--                                     else shape == Offsuit || shape == Suited
+--     isValidHolding :: Holding -> Bool
+--     isValidHolding (Holdem c1 c2) = c1 /= c2
 
 prop_isoReadShowCard :: Card -> Bool
 prop_isoReadShowCard card = read (show card) == card
 
-prop_isoReadShowHolding :: Holding -> Property
+-- read . show = id
+
+prop_isoReadShowHolding :: Hand -> Property
 prop_isoReadShowHolding holding@(Holdem c1 c2) = c1 /= c2 ==>
                                             read (show holding) == holding
 

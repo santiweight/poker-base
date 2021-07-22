@@ -1,15 +1,17 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE UndecidableInstances #-}
+-- {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 module Poker.Types.ActionIx where
 
 import Data.Data ( Data, Typeable )
 import GHC.Generics ( Generic )
 import Algebra.PartialOrd (PartialOrd(leq))
-import Poker.Types.Game ( BetAction, PotSize(..), BetSize )
+import Poker.Types.Game (BetAction)
 
 data ActionIx b
   = MatchesBet (BetAction (IxRange b))
@@ -24,17 +26,11 @@ data ActionIx b
   | LeaveIx
   deriving (Show, Eq, Data, Typeable, Generic, Functor)
 
-class (PartialOrd b, Num b) => IsBetSize b where
-  within :: b -> IxRange BetSize -> Bool
 
-deriving instance (PartialOrd (PotSize b), IsBetSize b) => IsBetSize (PotSize b)
+type IsBetSize b = (Ord b, Num b)
 
-instance IsBetSize BetSize where
-  within l r = inRange l r
-
-instance (Ord a, Num a) => IsBetSize (IxRange a) where
-  within = undefined
-  -- within = inIndex
+within :: Ord a => a -> IxRange a -> Bool
+within = inRange
 
 data IxRange a = AnyRn | BetweenRn a a | AboveRn a | BelowRn a | ExactlyRn a
   deriving (Show, Eq, Data, Typeable, Generic, Functor)
@@ -68,11 +64,11 @@ exactlyRn = ExactlyRn
 anyRn :: IxRange a
 anyRn = AnyRn
 
-inRange :: BetSize -> IxRange BetSize -> Bool
-inRange bet (BetweenRn low up) = low `leq` bet && bet `leq` up
+inRange :: Ord a => a -> IxRange a -> Bool
+inRange bet (BetweenRn low up) = low <= bet && bet <= up
 inRange bet (ExactlyRn amount) = bet == amount
-inRange bet (AboveRn low) = low `leq` bet
-inRange bet (BelowRn up) = bet `leq` up
+inRange bet (AboveRn low) = low <= bet
+inRange bet (BelowRn up) = bet <= up
 inRange _ AnyRn = True
 
 instance Num a => Num (IxRange a) where

@@ -18,6 +18,9 @@ import Data.Maybe
 import Data.Monoid (Sum (..))
 import Poker.Base
 import Algebra.Lattice.Ordered (Ordered(Ordered))
+import Money (Dense)
+import Poker.Types.Cards (Hand(Holdem))
+import Poker.Types.Cards (ShapedHand(Pair))
 
 newtype Range a b
   = Range
@@ -43,8 +46,8 @@ data RangeCollection a b
 
 type Freq = Double
 type Count = Sum Int
-type FreqRange = Range Holding Freq
-type CountRange = Range Holding Count
+type FreqRange = Range Hand Freq
+type CountRange = Range Hand Count
 type ShapedCountRange = Range ShapedHand Count
 type ShapedRange = Range ShapedHand CountRange
 type FreqShapedRange = Range ShapedHand FreqRange
@@ -60,50 +63,50 @@ instance (Show a, Show b) => Show (Range a b) where
 $(makeLenses ''Range)
 $(makeLenses ''RangeCollection)
 
-holdingRangeToShapedRange :: Eq t => Range Holding [BetAction t] -> Range ShapedHand (Range Holding [BetAction t])
+holdingRangeToShapedRange :: Eq t => Range Hand [BetAction t] -> Range ShapedHand (Range Hand [BetAction t])
 holdingRangeToShapedRange (Range r) = Range $ Map.foldrWithKey combine mempty r
   where
     combine ::
       Eq t =>
-      Holding ->
+      Hand ->
       [BetAction t] ->
-      Map ShapedHand (Range Holding [BetAction t]) ->
-      Map ShapedHand (Range Holding [BetAction t])
+      Map ShapedHand (Range Hand [BetAction t]) ->
+      Map ShapedHand (Range Hand [BetAction t])
     combine holding acts seed =
       seed
         & at (comboToShaped holding) . non mempty . range . at holding %~ Just . maybe acts (acts <>)
 
-shapedRangeToFreqRange :: (BetAction t -> Bool) -> Range ShapedHand (Range Holding [BetAction t])
-  -> Range ShapedHand (Range Holding (Int, Int))
+shapedRangeToFreqRange :: (BetAction t -> Bool) -> Range ShapedHand (Range Hand [BetAction t])
+  -> Range ShapedHand (Range Hand (Int, Int))
 shapedRangeToFreqRange prop ran =
-  ran & range . each %~ flatten :: Range ShapedHand (Range Holding (Int, Int))
+  ran & range . each %~ flatten :: Range ShapedHand (Range Hand (Int, Int))
   where
-    -- flatten :: Range Holding [BetAction t] -> Range Holding (Int, Int)
+    -- flatten :: Range Hand [BetAction t] -> Range Hand (Int, Int)
     flatten (Range r) = Range $ r & each %~ (\ls -> (length (filter prop ls), length ls))
 
-shapedHoldingRangeToShapedFreqRange :: Range ShapedHand (Range Holding (Int, Int)) -> Range ShapedHand (Int, Int)
-shapedHoldingRangeToShapedFreqRange ran = ran & range . each %~ sumRatios
+shapedHandRangeToShapedFreqRange :: Range ShapedHand (Range Hand (Int, Int)) -> Range ShapedHand (Int, Int)
+shapedHandRangeToShapedFreqRange ran = ran & range . each %~ sumRatios
   where
-    sumRatios :: Range Holding (Int, Int) -> (Int, Int)
+    sumRatios :: Range Hand (Int, Int) -> (Int, Int)
     sumRatios (Range r) = foldr (\(numAcc, denAcc) (numNew, denNew) -> (numAcc + numNew, denAcc + denNew)) (0, 0) r
 
 inc :: Count -> Maybe Count -> Maybe Count
 inc n mayNum = return $ fromMaybe 0 mayNum & (n +)
 
-addCombo :: Count -> Holding -> CountRange -> CountRange
+addCombo :: Count -> Hand -> CountRange -> CountRange
 addCombo n comb ran =
   ran
     -- & count %~ (+ n) -- here
     & range . at comb %~ inc n -- here
 
-comboToShaped :: Holding -> ShapedHand
+comboToShaped :: Hand -> ShapedHand
 comboToShaped (Holdem c1 c2)
-  | rank c1 == rank c2 = ShapedHand (rank c1, rank c2) Pair
-  | suit c1 == suit c2 = ShapedHand (rank c1, rank c2) Suited
-  | otherwise = ShapedHand (rank c1, rank c2) Offsuit
+  | rank c1 == rank c2 = mkPair $ rank c1
+  | suit c1 == suit c2 = fromJust $ mkSuited (rank c1) (rank c2)
+  | otherwise = fromJust $ mkOffsuit (rank c1) (rank c2)
 
 addComboToShaped :: Count
-                      -> Holding
+                      -> Hand
                       -> Range ShapedHand CountRange
                       -> Range ShapedHand CountRange
 addComboToShaped n comb ran =
@@ -112,7 +115,7 @@ addComboToShaped n comb ran =
         -- & count +~ n -- here
 
 addShaped :: Count
-               -> Holding -> Range ShapedHand Count -> Range ShapedHand Count
+               -> Hand -> Range ShapedHand Count -> Range ShapedHand Count
 addShaped n comb ran =
     let shaped_hand = comboToShaped comb in
     ran & range . at shaped_hand %~ inc n
@@ -121,7 +124,7 @@ addShaped n comb ran =
 addComboToCollection :: Ord a =>
                           Count
                           -> a
-                          -> Holding
+                          -> Hand
                           -> RangeCollection a (Range ShapedHand CountRange)
                           -> RangeCollection a (Range ShapedHand CountRange)
 addComboToCollection n act comb ranC =
@@ -131,18 +134,17 @@ addComboToCollection n act comb ranC =
     & total_shapedrange %~ addShaped n comb
 -- & total_count %~ (n +)
 
-shapeToCombos :: ShapedHand -> [Holding]
-shapeToCombos (ShapedHand (r1, r2) shape) =
-  case shape of
-    Pair -> do
+shapeToCombos :: ShapedHand -> [Hand]
+shapeToCombos = \case
+    Pair r -> do
       s1 <- listSuit
       s2 <- drop (fromEnum s1 + 1) listSuit
-      return $ Holdem (Card r1 s1) (Card r2 s2)
-    Offsuit -> do
+      return $ Holdem (Card r s1) (Card r s2)
+    Offsuit r1 r2-> do
       s1 <- listSuit
       s2 <- filter (s1 ==) listSuit
       return $ Holdem (Card r1 s1) (Card r2 s2)
-    Suited -> do
+    Suited r1 r2 -> do
       suit_ <- listSuit
       return $ Holdem (Card r1 suit_) (Card r2 suit_)
 
@@ -159,12 +161,12 @@ shapeToCombos (ShapedHand (r1, r2) shape) =
 --             Map.mapWithKey (\c n -> fromIntegral n / fromIntegral (cc ! c)) (count_range ^. range)
 --         }
 
-findRange :: ActionIx BetSize -> RangeCollection (BetAction BetSize) ShapedRange -> ShapedRange
+findRange :: IsBetSize b => ActionIx b -> RangeCollection (BetAction b) ShapedRange -> ShapedRange
 findRange indx ranC =
   let unionF = unionIndexRange indx
    in Map.foldlWithKey unionF mempty (ranC ^. ranges)
 
-unionIndexRange :: ActionIx BetSize -> ShapedRange -> BetAction BetSize -> ShapedRange -> ShapedRange
+unionIndexRange :: IsBetSize b => ActionIx b -> ShapedRange -> BetAction b -> ShapedRange -> ShapedRange
 unionIndexRange indx resRange k ran =
   if inIndex indx k
     then

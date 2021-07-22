@@ -19,11 +19,7 @@ instance Arbitrary Card where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
-instance Arbitrary Holding where
-  arbitrary = genericArbitrary
-  shrink = genericShrink
-
-instance Arbitrary Shape where
+instance Arbitrary Hand where
   arbitrary = genericArbitrary
   shrink = genericShrink
 

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 087f66429762f100e0f769524829c0bbed997b0a49449d0e0a8d45cd94a2489b
+-- hash: 6649092df5586ba828ac9b5ab217527bd1d11c5271a7e30d21c24f049bdc33e2
 
 name:           poker-base
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
   hs-source-dirs:
       src
   default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
+  ghc-options: -Wall
   build-depends:
       QuickCheck
     , aeson

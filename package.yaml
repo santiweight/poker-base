@@ -13,8 +13,8 @@ maintainer: santiago.weight@gmail.com
 library:
   source-dirs:
   - src
-  # ghc-options:
-  # - -Wall
+  ghc-options:
+  - -Wall
 
 tests:
   all-tests:

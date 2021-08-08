@@ -3,4 +3,4 @@ cradle:
     - path: "./src"
       component: "poker-base:lib"
     - path: "./test"
-      component: "poker-base:test"
+      component: "poker-base:test:all-tests"

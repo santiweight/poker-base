@@ -18,6 +18,7 @@ import Algebra.PartialOrd (PartialOrd)
 import Test.QuickCheck (Arbitrary (arbitrary, shrink), arbitraryBoundedEnum)
 import Data.List (sort)
 import Data.Text.Prettyprint.Doc (Pretty (pretty), (<+>))
+import Data.Text (Text)
 
 data Position = UTG | UTG1 | UTG2 | BU | SB | BB
   deriving (Read, Show, Enum, Bounded, Eq, Ord, Data, Typeable, Generic)
@@ -39,16 +40,10 @@ sortPostflop = fmap (toEnum . fromPostFlopOrder) . sort . fmap
   toPostFlopOrder   = flip mod 6 . (+ 2)
 
 
-data GameType = Zone | Cash
-  deriving (Show, Eq, Ord, Read, Enum, Generic)
-
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded, Data, Typeable, Generic)
 
-type Seat = Int
-
-data Network = Bovada | PokerStars | Unknown
-  deriving (Read, Show, Enum, Eq, Ord, Generic)
+newtype Seat = MkSeat Int deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 newtype PotSize b = PotSize b
   deriving (Show, Eq, Ord, Num, Functor, PartialOrd)
@@ -94,8 +89,8 @@ data TableActionValue t
   | Enter
   | SitOut
   | SitDown
-  | Showdown [Card] String
-  | Muck [Card] String
+  | Showdown [Card] Text
+  | Muck [Card] Text
   | Rejoin
   | Return t
   | Result t
@@ -116,30 +111,6 @@ data Action t
   | MkTableAction (TableAction t)
   deriving (Read, Show, Eq, Ord, Data, Typeable, Generic, Functor)
 
-data Player t
-  = Player
-      { _name :: Maybe String,
-        _playerPosition :: Maybe Position,
-        _playerHolding :: Maybe Hand,
-        _stack :: t,
-        _seat :: Seat
-      }
-  deriving (Show, Eq, Ord, Generic, Functor)
-
-data HandHistory t
-  = HandHistory
-      { _handID :: Int,
-        _handNetwork :: Network,
-        _handTy :: GameType,
-        _handTime :: LocalTime,
-        _handStakes :: Stake t,
-        _handPlayerMap :: Map Seat (Player t),
-        _handSeatMap :: Map Position Seat,
-        _handActions :: [Action t],
-        _handText :: String
-      }
-  deriving (Show, Eq, Ord, Generic, Functor)
-
 data Board where
   RiverBoard :: Card -> Board -> Board
   TurnBoard :: Card -> Board -> Board
@@ -158,5 +129,4 @@ instance Pretty Board where
   pretty (TurnBoard card flop) = pretty "Turn is: " <+> pretty card <+> pretty flop
   pretty (RiverBoard card flop) = pretty "River is: " <+> pretty card <+> pretty flop
 
-makeLenses ''Player
 makeLenses ''Hand

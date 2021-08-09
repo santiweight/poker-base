@@ -26,6 +26,7 @@ module Poker.Types.Cards
   , pattern Offsuit
   , pattern Pair
   , pattern Suited
+  , unsafeMkHand
   ) where
 
 import           Control.Applicative            ( Alternative(empty)
@@ -37,8 +38,9 @@ import           Control.Monad                  ( guard
 import           Data.Data
 import           Data.Functor                   ( ($>) )
 import qualified Data.IntMap.Strict
+import           Data.List.Extra                ( enumerate )
 import qualified Data.Map.Strict
-import           Data.Maybe                     ( fromJust )
+import           Data.Maybe                     ( fromJust, fromMaybe )
 import           Data.Text.Prettyprint.Doc      ( Pretty(pretty) )
 import           GHC.Generics
 import           Poker.ParsePretty              ( ParsePretty(parsePrettyP) )
@@ -47,7 +49,6 @@ import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
                                                 , anySingle
                                                 )
-import Data.List.Extra (enumerate)
 
 -- | The 'Rank' of a playing card
 data Rank = Two | Three | Four
@@ -72,24 +73,23 @@ instance Pretty Rank where
     Ace   -> "A"
 
 instance ParsePretty Rank where
-  parsePrettyP = anySingle >>= liftMaybe . chrToRank <?> "Rank"
+  parsePrettyP = anySingle >>= chrToRank <?> "Rank"
    where
-    chrToRank :: Char -> Maybe Rank
     chrToRank = \case
-      '2' -> Just Two
-      '3' -> Just Three
-      '4' -> Just Four
-      '5' -> Just Five
-      '6' -> Just Six
-      '7' -> Just Seven
-      '8' -> Just Eight
-      '9' -> Just Nine
-      'T' -> Just Ten
-      'J' -> Just Jack
-      'Q' -> Just Queen
-      'K' -> Just King
-      'A' -> Just Ace
-      _   -> Nothing
+      '2' -> pure Two
+      '3' -> pure Three
+      '4' -> pure Four
+      '5' -> pure Five
+      '6' -> pure Six
+      '7' -> pure Seven
+      '8' -> pure Eight
+      '9' -> pure Nine
+      'T' -> pure Ten
+      'J' -> pure Jack
+      'Q' -> pure Queen
+      'K' -> pure King
+      'A' -> pure Ace
+      chr -> fail $ "Unknown Rank: " <> show chr
 
 -- | The 'Suit' of a playing card
 data Suit = Club | Diamond | Heart | Spade
@@ -121,10 +121,9 @@ instance Pretty Suit where
   pretty Spade   = "s"
 
 instance ParsePretty Suit where
-  parsePrettyP = anySingle >>= liftMaybe . chrToSuit <?> "Card"
+  parsePrettyP = anySingle >>= chrToSuit <?> "Suit"
    where
-    chrToSuit :: Char -> Maybe Suit
-    chrToSuit chr =
+    chrToSuit chr = maybe (fail $ "Unexpected Suit: " <> show chr) pure .
       Data.Map.Strict.lookup chr
         . Data.Map.Strict.fromList
         $ [('c', Club), ('d', Diamond), ('h', Heart), ('s', Spade)]
@@ -148,6 +147,9 @@ pattern Hand c1 c2 <- MkHand c1 c2
 mkHand :: Card -> Card -> Maybe Hand
 mkHand c1 c2 | c1 /= c2  = Just $ if c2 > c1 then MkHand c2 c1 else MkHand c1 c2
              | otherwise = Nothing
+
+unsafeMkHand :: Card -> Card -> Hand
+unsafeMkHand c1 c2 = fromJust $ mkHand c1 c2
 
 allHands :: [Hand]
 allHands = reverse $ do
@@ -178,9 +180,9 @@ instance Pretty Hand where
 -- Just (Hand (Card {rank = Ace, suit = Heart}) (Card {rank = King, suit = Spade}))
 instance ParsePretty Hand where
   parsePrettyP = label "Hand" $ do
-    card1 <- parsePrettyP
-    card2 <- parsePrettyP
-    liftMaybe $ mkHand card1 card2
+    c1 <- parsePrettyP
+    c2 <- parsePrettyP
+    maybe (fail $ "Invalid card: " <> show (c1, c2)) pure $ mkHand c1 c2
 
 -- | A 'ShapedHand' represents the canonical representation of a
 -- poker hand. For example, (King Diamonds, Five Heart), would
@@ -202,12 +204,14 @@ mkPair :: Rank -> ShapedHand
 mkPair = MkPair
 
 mkSuited :: Rank -> Rank -> Maybe ShapedHand
-mkSuited r1 r2 | r1 /= r2  = Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
-               | otherwise = Nothing
+mkSuited r1 r2
+  | r1 /= r2  = Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
+  | otherwise = Nothing
 
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHand
-mkOffsuit r1 r2 | r1 /= r2  = Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
-                | otherwise = Nothing
+mkOffsuit r1 r2
+  | r1 /= r2  = Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
+  | otherwise = Nothing
 
 listShapedHands :: [ShapedHand]
 listShapedHands = reverse $ do
@@ -271,10 +275,20 @@ instance ParsePretty ShapedHand where
     r1 <- parsePrettyP @Rank
     r2 <- parsePrettyP @Rank
     anySingle >>= \case
-      'p' -> guard (r1 == r2) $> MkPair r1
-      'o' -> guard (r1 /= r2) $> MkOffsuit r1 r2
-      's' -> guard (r1 /= r2) $> MkSuited r1 r2
-      _   -> empty
+      'p' -> if r1 /= r2
+        then fail $ "Pair must have two of same rank, but found " <> show
+          (r1, r2)
+        else pure $ MkPair r1
+      'o' -> if r1 == r2
+        then
+          fail $ "Offsuit must have two of different rank, but found " <> show
+            (r1, r2)
+        else pure $ MkPair r1
+      's' -> if r1 == r2
+        then fail $ "Suited must have two of different rank, but found " <> show
+          (r1, r2)
+        else pure $ MkPair r1
+      _ -> fail "Unexpected hand shape"
 
 newtype Deck = MkDeck [Card] deriving (Read, Show, Eq)
 
@@ -308,6 +322,3 @@ instance Bounded Card where
 -- | All cards in deck
 allCards :: [Card]
 allCards = liftM2 Card enumerate enumerate
-
-liftMaybe :: Alternative f => Maybe a -> f a
-liftMaybe = maybe empty pure

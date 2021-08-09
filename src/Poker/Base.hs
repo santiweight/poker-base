@@ -9,7 +9,6 @@ module Poker.Base
   , inIndex
   ) where
 
-import           Data.List                      ( sort )
 import           Poker.Types
 
 -- TODO test/fix

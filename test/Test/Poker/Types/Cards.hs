@@ -18,12 +18,13 @@ import           Data.Maybe                     ( fromJust
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Prettyprint.Doc
+import           Poker.Base                     ( freshDeck )
 import           Poker.ParsePretty
 import           Poker.Types.Cards
+import           Test.Hspec
 import           Test.Tasty
 import           Test.Tasty.Hspec
 import           Test.Tasty.QuickCheck
-import Poker.Base (freshDeck)
 
 spec_CardPrettyAndParse :: SpecWith ()
 spec_CardPrettyAndParse = assert (length cardCases == 169) $ do
@@ -118,10 +119,11 @@ spec_isoPrettyParseShapedHand = checkPrettyParseEnumIso @ShapedHand "ShapeHand"
 checkPrettyParseEnumIso
   :: forall a
    . (Eq a, ParsePretty a, Pretty a, Enum a, Bounded a, Show a)
-  => String -> SpecWith ()
+  => String
+  -> SpecWith ()
 checkPrettyParseEnumIso typeName =
-  it ("pretty and parse form iso" <> typeName) $ enumerate @a `shouldSatisfy` all
-    (\v -> roundTrip v == v)
+  describe ("pretty and parse form iso" <> typeName)
+    $ mapM_ (\val -> it (show val) $ roundTrip val == val) (enumerate @a)
  where
   renderPrettyT = T.pack . show . pretty
   roundTrip     = unsafeParsePretty . renderPrettyT
@@ -204,8 +206,8 @@ spec_shapedHandToHands = do
     , "QsTd"
     , "QsTh"
     ]
-  parseShaped = fromJust . parsePretty @ShapedHand
-  parseHand   = fromJust . parsePretty @Hand
+  parseShaped = unsafeParsePretty @ShapedHand
+  parseHand   = unsafeParsePretty @Hand
   mkCase name combo expected =
     it name
       $          shapedHandToHands (unsafeParsePretty combo)
@@ -252,20 +254,7 @@ allSuits = [Club, Diamond, Heart, Spade]
 
 allRanks :: [Rank]
 allRanks =
-  [ Two
-  , Three
-  , Four
-  , Five
-  , Six
-  , Seven
-  , Eight
-  , Nine
-  , Ten
-  , Jack
-  , Queen
-  , King
-  , Ace
-  ]
+  [Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace]
 
 allCards :: [Card]
 allCards = liftA2 Card allRanks allSuits

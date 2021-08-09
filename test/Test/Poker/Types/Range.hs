@@ -1,8 +1,11 @@
 module Test.Poker.Types.Range where
 
 import qualified Data.Map.Strict               as Map
-import           Poker.Types.Range                    ( Range(Range), Freq (Freq) )
-import qualified Poker.Types.Range                   as Range
+import           Poker.Types.Range              ( Freq(Freq)
+                                                , Range(Range)
+                                                )
+import qualified Poker.Types.Range             as Range
+import           Test.Hspec
 import           Test.Tasty.Hspec
 
 spec_RangefromList :: SpecWith ()

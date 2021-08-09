@@ -1,11 +1,5 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: 6649092df5586ba828ac9b5ab217527bd1d11c5271a7e30d21c24f049bdc33e2
-
 name:           poker-base
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/Exploit#readme>
@@ -25,9 +19,11 @@ source-repository head
   type: git
   location: https://github.com/santiweight/Exploit
 
+
 library
   exposed-modules:
       Poker.Base
+      Poker.Utils
       Poker.ParsePretty
       Poker.Types
       Poker.Types.ActionIx
@@ -84,6 +80,7 @@ test-suite all-tests
     , deriving-compat
     , extra
     , generic-arbitrary
+    , hspec
     , lattices
     , lens
     , megaparsec

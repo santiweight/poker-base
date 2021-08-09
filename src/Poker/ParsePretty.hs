@@ -1,9 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Poker.ParsePretty where
 
 import Text.Megaparsec (Parsec, parseMaybe)
 import Data.Void (Void)
 import Data.Text (Text)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromMaybe)
+import Poker.Utils (terror)
 
 type PrettyParser a = Parsec Void Text a
 
@@ -14,5 +17,5 @@ parsePretty :: ParsePretty a => Text -> Maybe a
 parsePretty = parseMaybe parsePrettyP
 
 unsafeParsePretty :: ParsePretty a => Text -> a
-unsafeParsePretty = fromJust . parsePretty
+unsafeParsePretty txt = fromMaybe (terror $ "Not a valid value: " <> txt) . parsePretty $ txt
 

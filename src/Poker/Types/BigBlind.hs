@@ -7,7 +7,6 @@ import           GHC.Generics                   ( Generic )
 import           Money                          ( CurrencyScale
                                                 , Dense
                                                 , Discrete
-                                                , Discrete'
                                                 , UnitScale
                                                 , denseFromDiscrete
                                                 )

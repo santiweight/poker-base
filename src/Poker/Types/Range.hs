@@ -13,10 +13,8 @@ import           Algebra.PartialOrd.Instances   ( )
 import           Control.Lens
 import           Data.Aeson
 import           Data.Bool                      ( bool )
-import           Data.List
 import           Data.Map                       ( Map )
 import qualified Data.Map.Strict               as Map
-import           Data.Maybe
 import           Data.Monoid                    ( Sum(..) )
 import           Data.Text.Prettyprint.Doc      ( (<+>)
                                                 , Pretty(pretty)
@@ -28,9 +26,6 @@ import           Data.Text.Prettyprint.Doc      ( (<+>)
                                                 , surround
                                                 )
 import           Poker.Base
-import           Poker.Types.Cards              ( Hand
-                                                , pattern Pair
-                                                )
 
 -- | A frequency is an unevaluated ratio that indicates how often a decision was
 -- made. For example, the value Freq (12, 34) indicates that out of the 34
@@ -81,8 +76,8 @@ instance (Pretty a, Pretty b) => Pretty (Range a b) where
 -- decision.
 getDecisionFreqRange
   :: Foldable f => (b -> Bool) -> Range a (f b) -> Range a Freq
-getDecisionFreqRange pred (Range m) =
-  Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ pred v, 1))) m
+getDecisionFreqRange p (Range m) =
+  Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v, 1))) m
 
 sum :: Monoid v => Range k v -> v
 sum (Range m) = Map.foldr' (<>) mempty m

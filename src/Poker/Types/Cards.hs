@@ -27,24 +27,27 @@ module Poker.Types.Cards
   , pattern Pair
   , pattern Suited
   , unsafeMkHand
+  , unsafeMkSuited
+  , unsafeMkOffsuit
   ) where
 
-import           Control.Applicative            ( Alternative(empty)
-                                                , Applicative(liftA2)
-                                                )
-import           Control.Monad                  ( guard
-                                                , liftM2
-                                                )
+import           Control.Applicative            ( Applicative(liftA2) )
+import           Control.Monad                  ( liftM2 )
 import           Data.Data
-import           Data.Functor                   ( ($>) )
 import qualified Data.IntMap.Strict
 import           Data.List.Extra                ( enumerate )
 import qualified Data.Map.Strict
-import           Data.Maybe                     ( fromJust, fromMaybe )
+import           Data.Maybe                     ( fromJust
+                                                , fromMaybe
+                                                )
+import qualified Data.Text                     as T
 import           Data.Text.Prettyprint.Doc      ( Pretty(pretty) )
 import           GHC.Generics
 import           Poker.ParsePretty              ( ParsePretty(parsePrettyP) )
-import           Test.QuickCheck.Arbitrary.Generic
+import           Poker.Pretty                   ( prettyText )
+import           Poker.Utils                    ( terror
+                                                , tfail, atMay
+                                                )
 import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
                                                 , anySingle
@@ -89,7 +92,7 @@ instance ParsePretty Rank where
       'Q' -> pure Queen
       'K' -> pure King
       'A' -> pure Ace
-      chr -> fail $ "Unknown Rank: " <> show chr
+      chr -> tfail $ "Unknown Rank: " <> prettyText chr
 
 -- | The 'Suit' of a playing card
 data Suit = Club | Diamond | Heart | Spade
@@ -123,8 +126,9 @@ instance Pretty Suit where
 instance ParsePretty Suit where
   parsePrettyP = anySingle >>= chrToSuit <?> "Suit"
    where
-    chrToSuit chr = maybe (fail $ "Unexpected Suit: " <> show chr) pure .
-      Data.Map.Strict.lookup chr
+    chrToSuit chr =
+      maybe (tfail $ "Unexpected Suit: " <> prettyText chr) pure
+        . Data.Map.Strict.lookup chr
         . Data.Map.Strict.fromList
         $ [('c', Club), ('d', Diamond), ('h', Heart), ('s', Spade)]
 
@@ -149,7 +153,9 @@ mkHand c1 c2 | c1 /= c2  = Just $ if c2 > c1 then MkHand c2 c1 else MkHand c1 c2
              | otherwise = Nothing
 
 unsafeMkHand :: Card -> Card -> Hand
-unsafeMkHand c1 c2 = fromJust $ mkHand c1 c2
+unsafeMkHand c1 c2 =
+  fromMaybe (terror $ "Cannot form a Hand from " <> prettyText (c1, c2))
+    $ mkHand c1 c2
 
 allHands :: [Hand]
 allHands = reverse $ do
@@ -158,12 +164,14 @@ allHands = reverse $ do
   (s1, s2) <- if r1 == r2
     then [ (s1, s2) | s1 <- enumerate, s2 <- drop 1 (enumFrom s1) ]
     else liftM2 (,) enumerate enumerate
-  pure . fromJust $ mkHand (Card r1 s1) (Card r2 s2)
+  pure $ unsafeMkHand (Card r1 s1) (Card r2 s2)
 
 instance Enum Hand where
-  toEnum = fromJust . flip
-    Data.IntMap.Strict.lookup
-    (Data.IntMap.Strict.fromList $ zip [1 ..] allHands)
+  toEnum num =
+    fromMaybe (error $ "Invalid Hand enum: " <> show num)
+      . flip Data.IntMap.Strict.lookup
+             (Data.IntMap.Strict.fromList $ zip [1 ..] allHands)
+      $ num
   fromEnum = fromJust . flip Data.Map.Strict.lookup
                              (Data.Map.Strict.fromList $ zip allHands [1 ..])
 
@@ -182,13 +190,14 @@ instance ParsePretty Hand where
   parsePrettyP = label "Hand" $ do
     c1 <- parsePrettyP
     c2 <- parsePrettyP
-    maybe (fail $ "Invalid card: " <> show (c1, c2)) pure $ mkHand c1 c2
+    maybe (fail . T.unpack $ "Invalid card: " <> prettyText (c1, c2)) pure
+      $ mkHand c1 c2
 
 -- | A 'ShapedHand' represents the canonical representation of a
 -- poker hand. For example, (King Diamonds, Five Heart), would
 -- TODO Make patterns uni-directional (don't expose constructors)
 data ShapedHand = MkPair Rank | MkOffsuit Rank Rank | MkSuited Rank Rank
-  deriving (Eq, Ord, Generic, Show, Read)
+ deriving (Eq, Ord, Generic, Show, Read)
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 pattern Pair :: Rank -> ShapedHand
@@ -208,44 +217,63 @@ mkSuited r1 r2
   | r1 /= r2  = Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
   | otherwise = Nothing
 
+unsafeMkSuited :: Rank -> Rank -> ShapedHand
+unsafeMkSuited r1 r2 =
+  fromMaybe (terror $ "Invalid Suited hand: " <> prettyText (r1, r2))
+    $ mkSuited r1 r2
+
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHand
 mkOffsuit r1 r2
   | r1 /= r2  = Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
   | otherwise = Nothing
+
+unsafeMkOffsuit :: Rank -> Rank -> ShapedHand
+unsafeMkOffsuit r1 r2 =
+  fromMaybe (terror $ "Cannot form offsuit hand from: " <> prettyText (r1, r2))
+    $ mkOffsuit r1 r2
 
 listShapedHands :: [ShapedHand]
 listShapedHands = reverse $ do
   rank1 <- enumerate
   rank2 <- enumerate
   return $ case compare rank1 rank2 of
-    GT -> fromJust $ mkSuited rank1 rank2
+    GT -> unsafeMkSuited rank1 rank2
     EQ -> mkPair rank1
-    LT -> fromJust $ mkOffsuit rank1 rank2
+    LT -> unsafeMkOffsuit rank1 rank2
 
+-- >>> import Poker.ParsePretty
+-- >>> pretty . shapedHandToHands $ unsafeParsePretty "55p"
+-- [5d5c, 5h5c, 5s5c, 5h5d, 5s5d, 5s5h]
+-- >>> pretty . shapedHandToHands $ unsafeParsePretty "97o"
+-- [9c7d, 9c7h, 9c7s, 9d7c, 9d7h, 9d7s, 9h7c, 9h7d, 9h7s, 9s7c, 9s7d, 9s7h]
+-- >>> pretty . shapedHandToHands $ unsafeParsePretty "QTs"
+-- [QcTc, QdTd, QhTh, QsTs]
 shapedHandToHands :: ShapedHand -> [Hand]
 shapedHandToHands = \case
   Pair r -> do
     s1 <- enumerate
     s2 <- drop (fromEnum s1 + 1) enumerate
-    pure . fromJust $ mkHand (Card r s1) (Card r s2)
+    pure $ unsafeMkHand (Card r s1) (Card r s2)
   Offsuit r1 r2 -> do
     s1 <- enumerate
     s2 <- filter (s1 /=) enumerate
-    pure . fromJust $ mkHand (Card r1 s1) (Card r2 s2)
+    pure $ unsafeMkHand (Card r1 s1) (Card r2 s2)
   Suited r1 r2 -> do
     s <- enumerate
-    pure . fromJust $ mkHand (Card r1 s) (Card r2 s)
+    pure $ unsafeMkHand (Card r1 s) (Card r2 s)
 
 handToShaped :: Hand -> ShapedHand
 handToShaped (Hand c1 c2)
   | rank c1 == rank c2 = mkPair $ rank c1
-  | suit c1 == suit c2 = fromJust $ mkSuited (rank c1) (rank c2)
-  | otherwise          = fromJust $ mkOffsuit (rank c1) (rank c2)
+  | suit c1 == suit c2 = unsafeMkSuited (rank c1) (rank c2)
+  | otherwise          = unsafeMkOffsuit (rank c1) (rank c2)
 
 instance Enum ShapedHand where
-  toEnum = fromJust . flip
-    Data.IntMap.Strict.lookup
-    (Data.IntMap.Strict.fromList $ zip [1 ..] listShapedHands)
+  toEnum num =
+    fromMaybe (error $ "Invalid ShapedHand enum: " <> show num)
+      . flip Data.IntMap.Strict.lookup
+             (Data.IntMap.Strict.fromList $ zip [1 ..] listShapedHands)
+      $ num
   fromEnum = fromJust . flip
     Data.Map.Strict.lookup
     (Data.Map.Strict.fromList $ zip listShapedHands [1 ..])
@@ -264,6 +292,7 @@ instance Pretty ShapedHand where
 -- | pair : 22p
 -- offsuit : 24o
 -- suited : 24s
+-- >>> import Poker.ParsePretty
 -- >>> parsePretty @ShapedHand "22p"
 -- Just (Pair Two)
 -- >>> parsePretty @ShapedHand "24o"
@@ -276,18 +305,21 @@ instance ParsePretty ShapedHand where
     r2 <- parsePrettyP @Rank
     anySingle >>= \case
       'p' -> if r1 /= r2
-        then fail $ "Pair must have two of same rank, but found " <> show
+        then tfail $ "Pair must have two of same rank, but found " <> prettyText
           (r1, r2)
         else pure $ MkPair r1
       'o' -> if r1 == r2
         then
-          fail $ "Offsuit must have two of different rank, but found " <> show
-            (r1, r2)
-        else pure $ MkPair r1
+          tfail
+          $  "Offsuit must have two of different rank, but found "
+          <> prettyText (r1, r2)
+        else pure $ unsafeMkOffsuit r1 r2
       's' -> if r1 == r2
-        then fail $ "Suited must have two of different rank, but found " <> show
-          (r1, r2)
-        else pure $ MkPair r1
+        then
+          tfail
+          $  "Suited must have two of different rank, but found "
+          <> prettyText (r1, r2)
+        else pure $ unsafeMkSuited r1 r2
       _ -> fail "Unexpected hand shape"
 
 newtype Deck = MkDeck [Card] deriving (Read, Show, Eq)
@@ -312,7 +344,7 @@ instance ParsePretty Card where
   parsePrettyP = liftA2 Card parsePrettyP parsePrettyP
 
 instance Enum Card where
-  toEnum n = allCards !! n
+  toEnum n = fromMaybe (error $ "Invalid Card enum: " <> show n) $ atMay allCards n
   fromEnum c = fromEnum (rank c) * 4 + fromEnum (suit c)
 
 instance Bounded Card where

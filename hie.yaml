@@ -1,6 +1,6 @@
 cradle:
-  stack:
+  cabal:
     - path: "./src"
-      component: "poker-base:lib"
+      component: "lib:poker-base"
     - path: "./test"
-      component: "poker-base:test:all-tests"
+      component: "test:all-tests"

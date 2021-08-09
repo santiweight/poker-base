@@ -11,11 +11,8 @@ module Poker.Types.Game where
 import Poker.Types.Cards
 import Control.Lens ( makeLenses )
 import Data.Data
-import Data.Map (Map)
-import Data.Time.LocalTime (LocalTime (..))
 import GHC.Generics
 import Algebra.PartialOrd (PartialOrd)
-import Test.QuickCheck (Arbitrary (arbitrary, shrink), arbitraryBoundedEnum)
 import Data.List (sort)
 import Data.Text.Prettyprint.Doc (Pretty (pretty), (<+>))
 import Data.Text (Text)

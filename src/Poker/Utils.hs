@@ -2,12 +2,11 @@ module Poker.Utils where
 
 import Data.Text (Text)
 import qualified Data.Text as T
-import Text.Megaparsec (MonadParsec)
 
 terror :: Text -> a
 terror = error . T.unpack
 
-tfail :: (MonadParsec e s m, MonadFail m) => Text ->  m a
+tfail :: (MonadFail m) => Text ->  m a
 tfail = fail . T.unpack
 
 atMay :: [a] -> Int -> Maybe a

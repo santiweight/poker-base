@@ -11,8 +11,6 @@ import Data.Data ( Data, Typeable )
 import GHC.Generics ( Generic )
 import Algebra.PartialOrd (PartialOrd(leq))
 import Poker.Types.Game (BetAction)
-import Test.QuickCheck ( Arbitrary(arbitrary, shrink), genericShrink )
-import Test.QuickCheck.Arbitrary.Generic (genericArbitrary)
 
 data ActionIx b
   = MatchesBet (BetAction (IxRange b))
@@ -25,7 +23,7 @@ data ActionIx b
   | CallIx
   | FoldIx
   | LeaveIx
-  deriving (Show, Eq, Data, Typeable, Generic, Functor)
+  deriving (Show, Eq, Functor)
 
 
 type IsBetSize b = (Ord b, Num b)
@@ -144,7 +142,3 @@ subRange (AboveRn above1) (AboveRn above2) = AboveRn $ above1 - above2
 --     go (AboveRn above ) (BetweenRn l u ) = BetweenRn (l - above) u
 --     go (AboveRn above ) (BelowRn _     ) = AboveRn above
 --     go (AboveRn above1) (AboveRn above2) = AboveRn $ above1 - above2
-
-instance Arbitrary a => Arbitrary (IxRange a) where
-  arbitrary = genericArbitrary
-  shrink = genericShrink

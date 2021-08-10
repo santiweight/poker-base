@@ -6,9 +6,7 @@
 module Test.Poker.Types.Cards where
 
 import           Control.Applicative
-import           Control.Exception
 import           Control.Monad
-import           Control.Monad.IO.Class         ( liftIO )
 import           Data.List                      ( nub )
 import           Data.List.Extra                ( anySame )
 import           Data.Maybe                     ( fromJust
@@ -18,16 +16,13 @@ import           Data.Maybe                     ( fromJust
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Prettyprint.Doc
-import           Poker.Base                     ( freshDeck )
 import           Poker.ParsePretty
 import           Poker.Types.Cards
 import           Test.Hspec
-import           Test.Tasty
-import           Test.Tasty.Hspec
 import           Test.Tasty.QuickCheck
 
 spec_CardPrettyAndParse :: SpecWith ()
-spec_CardPrettyAndParse = assert (length cardCases == 169) $ do
+spec_CardPrettyAndParse = do
   describe "Check Pretty and ParsePretty form isomorphism"
     $ forM_ cardCases genTestCase
  where
@@ -133,8 +128,8 @@ spec_mkHand = do
   let aceS = Card Ace Spade
   let aceD = Card Ace Diamond
   it "success" $ mkHand aceS aceD `shouldSatisfy` \case
-    Just (Hand aceD aceS) -> True
-    _                     -> False
+    Just (Hand c1 c2) | c1 == aceS, c2 == aceD -> True
+    _ -> False
   it "fail" $ let c = Card Two Club in mkHand c c `shouldBe` Nothing
   it "order doesn't matter" $ allCardPairs `shouldSatisfy` all
     (\(c1, c2) -> mkHand c1 c2 == mkHand c2 c1)
@@ -206,8 +201,6 @@ spec_shapedHandToHands = do
     , "QsTd"
     , "QsTh"
     ]
-  parseShaped = unsafeParsePretty @ShapedHand
-  parseHand   = unsafeParsePretty @Hand
   mkCase name combo expected =
     it name
       $          shapedHandToHands (unsafeParsePretty combo)
@@ -247,6 +240,7 @@ spec_enumerate = do
       $          length (nub $ enumerate @ShapedHand)
       `shouldBe` 169
 
+spec_freshDeck :: SpecWith ()
 spec_freshDeck = it "freshDeck" $ freshDeck `shouldBe` unsafeMkDeck allCards
 
 allSuits :: [Suit]

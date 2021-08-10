@@ -3,7 +3,6 @@ module Test.Poker.Types.Game where
 import           Data.List.Extra                ( enumerate )
 import           Poker.Types.Game
 import           Test.Hspec
-import           Test.Tasty.Hspec
 
 spec_sortPositions :: SpecWith ()
 spec_sortPositions = do

@@ -1,6 +1,5 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedLists #-}
 
 module Poker.Types.Cards
   ( Rank(..)
@@ -33,7 +32,6 @@ module Poker.Types.Cards
 
 import           Control.Applicative            ( Applicative(liftA2) )
 import           Control.Monad                  ( liftM2 )
-import           Data.Data
 import qualified Data.IntMap.Strict
 import           Data.List.Extra                ( enumerate )
 import qualified Data.Map.Strict
@@ -41,13 +39,15 @@ import           Data.Maybe                     ( fromJust
                                                 , fromMaybe
                                                 )
 import qualified Data.Text                     as T
-import           Data.Text.Prettyprint.Doc      ( Pretty(pretty) )
-import           GHC.Generics
-import           Poker.ParsePretty              ( ParsePretty(parsePrettyP) )
-import           Poker.Pretty                   ( prettyText )
-import           Poker.Utils                    ( terror
-                                                , tfail, atMay
+import           Poker.ParsePretty              ( ParsePretty(parsePrettyP)
+                                                , PrettyParser
                                                 )
+import           Poker.Pretty                   ( prettyText )
+import           Poker.Utils                    ( atMay
+                                                , terror
+                                                , tfail
+                                                )
+import           Prettyprinter.Internal
 import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
                                                 , anySingle
@@ -57,10 +57,10 @@ import           Text.Megaparsec                ( (<?>)
 data Rank = Two | Three | Four
           | Five | Six | Seven | Eight | Nine | Ten
           | Jack | Queen | King | Ace
-    deriving (Enum, Bounded, Eq, Ord, Data, Typeable, Generic, Show, Read)
+    deriving (Enum, Bounded, Eq, Ord, Show, Read)
 
 instance Pretty Rank where
-  pretty = \case
+  pretty r = unsafeTextWithoutNewlines $ case r of
     Two   -> "2"
     Three -> "3"
     Four  -> "4"
@@ -76,8 +76,10 @@ instance Pretty Rank where
     Ace   -> "A"
 
 instance ParsePretty Rank where
+  parsePrettyP :: PrettyParser Rank
   parsePrettyP = anySingle >>= chrToRank <?> "Rank"
    where
+    chrToRank :: Char -> PrettyParser Rank
     chrToRank = \case
       '2' -> pure Two
       '3' -> pure Three
@@ -96,7 +98,7 @@ instance ParsePretty Rank where
 
 -- | The 'Suit' of a playing card
 data Suit = Club | Diamond | Heart | Spade
-  deriving (Enum, Bounded, Eq, Ord, Data, Typeable, Generic, Show, Read)
+  deriving (Enum, Bounded, Eq, Ord, Show, Read)
 
 -- >>> toUnicode <$> ([Club, Diamond, Heart, Spade] :: [Suit])
 -- "\9827\9830\9829\9824"
@@ -134,15 +136,34 @@ instance ParsePretty Suit where
 
 -- | Representation of a playing card.
 data Card = Card
-  { rank :: Rank
-  , suit :: Suit
+  { rank :: !Rank
+  , suit :: !Suit
   }
-  deriving (Eq, Ord, Data, Typeable, Generic, Show, Read)
+  deriving (Eq, Ord, Show, Read)
+
+instance Pretty Card where
+  pretty Card { rank = r, suit = s } = pretty r <> pretty s
+
+instance ParsePretty Card where
+  parsePrettyP = liftA2 Card parsePrettyP parsePrettyP
+
+instance Enum Card where
+  toEnum n =
+    fromMaybe (error $ "Invalid Card enum: " <> show n) $ atMay allCards n
+  fromEnum c = fromEnum (rank c) * 4 + fromEnum (suit c)
+
+instance Bounded Card where
+  minBound = toEnum 0
+  maxBound = toEnum 51
+
+-- | All cards in deck
+allCards :: [Card]
+allCards = liftM2 Card enumerate enumerate
 
 -- | A 'Hand' is the hand that a player was dealt. Currently
 -- the 'Hand' type is only for holdem poker
-data Hand = MkHand Card Card
-  deriving (Eq, Ord, Generic, Show)
+data Hand = MkHand !Card !Card
+  deriving (Eq, Ord, Show)
 
 {-# COMPLETE Hand #-}
 pattern Hand :: Card -> Card -> Hand
@@ -196,8 +217,8 @@ instance ParsePretty Hand where
 -- | A 'ShapedHand' represents the canonical representation of a
 -- poker hand. For example, (King Diamonds, Five Heart), would
 -- TODO Make patterns uni-directional (don't expose constructors)
-data ShapedHand = MkPair Rank | MkOffsuit Rank Rank | MkSuited Rank Rank
- deriving (Eq, Ord, Generic, Show, Read)
+data ShapedHand = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
+ deriving (Eq, Ord, Show, Read)
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 pattern Pair :: Rank -> ShapedHand
@@ -263,10 +284,10 @@ shapedHandToHands = \case
     pure $ unsafeMkHand (Card r1 s) (Card r2 s)
 
 handToShaped :: Hand -> ShapedHand
-handToShaped (Hand c1 c2)
-  | rank c1 == rank c2 = mkPair $ rank c1
-  | suit c1 == suit c2 = unsafeMkSuited (rank c1) (rank c2)
-  | otherwise          = unsafeMkOffsuit (rank c1) (rank c2)
+handToShaped (Hand (Card r1 s1) (Card r2 s2))
+  | r1 == r2  = mkPair r1
+  | s1 == s2  = unsafeMkSuited r1 r2
+  | otherwise = unsafeMkOffsuit r1 r1
 
 instance Enum ShapedHand where
   toEnum num =
@@ -303,24 +324,19 @@ instance ParsePretty ShapedHand where
   parsePrettyP = label "ShapedHand" $ do
     r1 <- parsePrettyP @Rank
     r2 <- parsePrettyP @Rank
+    let rs = (r1, r2)
     anySingle >>= \case
-      'p' -> if r1 /= r2
-        then tfail $ "Pair must have two of same rank, but found " <> prettyText
-          (r1, r2)
-        else pure $ MkPair r1
+      'p' -> if r1 /= r2 then invalidShapedFail "Pair" rs else pure $ MkPair r1
       'o' -> if r1 == r2
-        then
-          tfail
-          $  "Offsuit must have two of different rank, but found "
-          <> prettyText (r1, r2)
+        then invalidShapedFail "Offsuit" rs
         else pure $ unsafeMkOffsuit r1 r2
       's' -> if r1 == r2
-        then
-          tfail
-          $  "Suited must have two of different rank, but found "
-          <> prettyText (r1, r2)
+        then invalidShapedFail "Suited" rs
         else pure $ unsafeMkSuited r1 r2
       _ -> fail "Unexpected hand shape"
+   where
+    invalidShapedFail name rs =
+      tfail $ "Invalid " <> name <> " ranks: " <> prettyText rs
 
 newtype Deck = MkDeck [Card] deriving (Read, Show, Eq)
 
@@ -336,21 +352,3 @@ freshDeck = MkDeck allCards
 -- | The input cards are not checked in any way.
 unsafeMkDeck :: [Card] -> Deck
 unsafeMkDeck = MkDeck
-
-instance Pretty Card where
-  pretty Card { rank = r, suit = s } = pretty r <> pretty s
-
-instance ParsePretty Card where
-  parsePrettyP = liftA2 Card parsePrettyP parsePrettyP
-
-instance Enum Card where
-  toEnum n = fromMaybe (error $ "Invalid Card enum: " <> show n) $ atMay allCards n
-  fromEnum c = fromEnum (rank c) * 4 + fromEnum (suit c)
-
-instance Bounded Card where
-  minBound = toEnum 0
-  maxBound = toEnum 51
-
--- | All cards in deck
-allCards :: [Card]
-allCards = liftM2 Card enumerate enumerate

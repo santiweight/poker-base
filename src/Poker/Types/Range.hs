@@ -10,12 +10,9 @@
 module Poker.Types.Range where
 
 import           Algebra.PartialOrd.Instances   ( )
-import           Control.Lens
-import           Data.Aeson
 import           Data.Bool                      ( bool )
 import           Data.Map                       ( Map )
 import qualified Data.Map.Strict               as Map
-import           Data.Monoid                    ( Sum(..) )
 import           Data.Text.Prettyprint.Doc      ( (<+>)
                                                 , Pretty(pretty)
                                                 , colon
@@ -30,9 +27,14 @@ import           Poker.Base
 -- | A frequency is an unevaluated ratio that indicates how often a decision was
 -- made. For example, the value Freq (12, 34) indicates that out of the 34
 -- people who faced this decision, 12 chose to make this decision.
-newtype Freq = Freq (Int, Int)
+data Freq = Freq !Int !Int
   deriving (Show, Eq)
-  deriving (Semigroup, Monoid) via (Sum Int, Sum Int)
+
+instance Monoid Freq where
+  mempty = Freq 0 0
+
+instance Semigroup Freq where
+  (Freq l1 r1) <> (Freq l2 r2) = Freq (l1 + l2) (r1 + r2)
 
 type Count = Int
 
@@ -50,9 +52,7 @@ type Count = Int
 newtype Range a b
   = Range
       {_range :: Map a b}
-  deriving (Read, Eq, Show, ToJSON, FromJSON)
-
-$(makeLenses ''Range)
+  deriving (Read, Eq, Show)
 
 fromList :: Ord a => [(a, b)] -> Range a b
 fromList = Range . Map.fromList
@@ -77,7 +77,7 @@ instance (Pretty a, Pretty b) => Pretty (Range a b) where
 getDecisionFreqRange
   :: Foldable f => (b -> Bool) -> Range a (f b) -> Range a Freq
 getDecisionFreqRange p (Range m) =
-  Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v, 1))) m
+  Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v) 1)) m
 
 sum :: Monoid v => Range k v -> v
 sum (Range m) = Map.foldr' (<>) mempty m
@@ -87,4 +87,5 @@ holdingRangeToShapedRange (Range r) =
   Range $ Map.mapKeysWith (<>) handToShaped r
 
 addShaped :: Count -> Hand -> Range ShapedHand Count -> Range ShapedHand Count
-addShaped n comb ran = ran & range . at (handToShaped comb) . non 0 %~ (+ n)
+addShaped n comb (Range r) =
+  Range $ Map.alter (pure . maybe 0 (+ n)) (handToShaped comb) r

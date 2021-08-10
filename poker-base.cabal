@@ -25,6 +25,7 @@ library
       Poker.Base
       Poker.Utils
       Poker.ParsePretty
+      Poker.Pretty
       Poker.Types
       Poker.Types.ActionIx
       Poker.Types.BigBlind
@@ -36,34 +37,22 @@ library
   hs-source-dirs:
       src
   default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
-  ghc-options: -Wall
+  ghc-options: -j8 +RTS -A128m -n2m -RTS -Wall -O0
   build-depends:
-      QuickCheck
-    , aeson
-    , base
+    base
     , containers
-    , deriving-compat
     , extra
-    , generic-arbitrary
     , lattices
-    , lens
     , megaparsec
     , prettyprinter
-    , range
     , safe-money
-    , tasty
-    , tasty-discover
-    , tasty-hspec
-    , tasty-quickcheck
     , text
-    , time
   default-language: Haskell2010
 
 test-suite all-tests
   type: exitcode-stdio-1.0
   main-is: Driver.hs
   other-modules:
-      Test.Poker.Types.ActionIx
       Test.Poker.Types.Cards
       Test.Poker.Types.Game
       Test.Poker.Types.Range
@@ -71,27 +60,21 @@ test-suite all-tests
   hs-source-dirs:
       test
   default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -O0
   build-depends:
       QuickCheck
-    , aeson
     , base
     , containers
-    , deriving-compat
     , extra
-    , generic-arbitrary
     , hspec
     , lattices
-    , lens
     , megaparsec
     , poker-base
     , prettyprinter
-    , range
     , safe-money
     , tasty
     , tasty-discover
     , tasty-hspec
     , tasty-quickcheck
     , text
-    , time
   default-language: Haskell2010

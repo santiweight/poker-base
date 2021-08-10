@@ -9,7 +9,6 @@
 
 module Poker.Types.Range where
 
-import           Algebra.PartialOrd.Instances   ( )
 import           Data.Bool                      ( bool )
 import           Data.Map                       ( Map )
 import qualified Data.Map.Strict               as Map

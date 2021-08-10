@@ -27,7 +27,6 @@ library
       Poker.ParsePretty
       Poker.Pretty
       Poker.Types
-      Poker.Types.ActionIx
       Poker.Types.BigBlind
       Poker.Types.Cards
       Poker.Types.Game
@@ -42,7 +41,6 @@ library
     base
     , containers
     , extra
-    , lattices
     , megaparsec
     , prettyprinter
     , safe-money
@@ -67,7 +65,6 @@ test-suite all-tests
     , containers
     , extra
     , hspec
-    , lattices
     , megaparsec
     , poker-base
     , prettyprinter

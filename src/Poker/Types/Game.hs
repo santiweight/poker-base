@@ -8,7 +8,6 @@
 
 module Poker.Types.Game where
 
-import           Algebra.PartialOrd             ( PartialOrd )
 import           Data.List                      ( sort )
 import           Data.Text                      ( Text )
 import           Poker.Types.Cards
@@ -39,7 +38,7 @@ data IsHero = Hero | Villain
 newtype Seat = MkSeat Int deriving (Show, Eq, Ord)
 
 newtype PotSize b = PotSize b
-  deriving (Show, Eq, Ord, Num, Functor, PartialOrd)
+  deriving (Show, Eq, Ord, Num, Functor)
 
 newtype StackSize b = StackSize b
   deriving (Show, Eq, Ord, Num)

@@ -23,7 +23,6 @@ source-repository head
 library
   exposed-modules:
       Poker.Base
-      Poker.Utils
       Poker.ParsePretty
       Poker.Pretty
       Poker.Types
@@ -32,6 +31,7 @@ library
       Poker.Types.Game
       Poker.Types.Range
   other-modules:
+      Poker.Utils
       Paths_poker_base
   hs-source-dirs:
       src

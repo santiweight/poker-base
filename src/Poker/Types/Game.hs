@@ -11,9 +11,13 @@ module Poker.Types.Game where
 import           Data.List                      ( sort )
 import           Data.Text                      ( Text )
 import           Poker.Types.Cards
+import Prettyprinter
 
 data Position = UTG | UTG1 | UTG2 | BU | SB | BB
   deriving (Read, Show, Enum, Bounded, Eq, Ord)
+
+instance Pretty Position where
+  pretty = viaShow
 
 -- | Sort a list of positions according to preflop ordering
 -- >>> sortPreflop $ [BB,BU,UTG1,SB,UTG,UTG2]
@@ -35,13 +39,13 @@ sortPostflop = fmap (toEnum . fromPostFlopOrder) . sort . fmap
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)
 
-newtype Seat = MkSeat Int deriving (Show, Eq, Ord)
+newtype Seat = MkSeat Int deriving (Show, Eq, Ord, Num)
 
 newtype PotSize b = PotSize b
-  deriving (Show, Eq, Ord, Num, Functor)
+  deriving (Show, Eq, Ord, Num, Functor, Pretty)
 
 newtype StackSize b = StackSize b
-  deriving (Show, Eq, Ord, Num)
+  deriving (Show, Eq, Ord, Num, Functor, Pretty)
 
 data BetAction t
   = Call !t
@@ -95,7 +99,6 @@ data DealerAction
   | RiverDeal !Card
   deriving (Read, Show, Eq, Ord)
 
-
 data Action t
   = MkPlayerAction !(PlayerAction t)
   | MkDealerAction !DealerAction
@@ -108,7 +111,10 @@ data Board where
   FlopBoard :: (Card, Card, Card) -> !Board -> Board
   PreFlopBoard :: !Board -> Board
   InitialTable :: Board
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
+
+instance Pretty Board where
+  pretty = viaShow
 
 newtype Stake b = Stake { getStake :: b }
-  deriving (Read, Show, Eq, Functor, Ord)
+  deriving (Read, Show, Eq, Functor, Ord, Pretty)

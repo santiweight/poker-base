@@ -2,6 +2,8 @@ module Poker.Utils where
 
 import Data.Text (Text)
 import qualified Data.Text as T
+import Prettyprinter (Pretty (pretty), layoutCompact)
+import Prettyprinter.Render.Text (renderStrict)
 
 terror :: Text -> a
 terror = error . T.unpack
@@ -19,3 +21,9 @@ atMay xs i
     go j (_:ys) = go (j - 1) ys
     go _ []     = Nothing
 {-# INLINE atMay #-}
+
+enumerate :: (Enum a, Bounded a) => [a]
+enumerate = [minBound..maxBound]
+
+prettyText :: Pretty a => a -> Text
+prettyText = renderStrict . layoutCompact . pretty

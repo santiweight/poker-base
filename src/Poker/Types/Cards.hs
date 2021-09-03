@@ -9,7 +9,6 @@ module Poker.Types.Cards
   , pattern Hand
   , ParsePretty(..)
   , mkHand
-  , enumerate
   , ShapedHand
   , mkPair
   , mkOffsuit
@@ -33,25 +32,25 @@ module Poker.Types.Cards
 import           Control.Applicative            ( Applicative(liftA2) )
 import           Control.Monad                  ( liftM2 )
 import qualified Data.IntMap.Strict
-import           Data.List.Extra                ( enumerate )
 import qualified Data.Map.Strict
 import           Data.Maybe                     ( fromJust
                                                 , fromMaybe
                                                 )
 import qualified Data.Text                     as T
 import           Poker.ParsePretty              ( ParsePretty(parsePrettyP)
-                                                , PrettyParser
+                                                , PrettyParser, parsePretty, tfailure
                                                 )
-import           Poker.Pretty                   ( prettyText )
 import           Poker.Utils                    ( atMay
                                                 , terror
-                                                , tfail
+                                                , tfail, enumerate, prettyText
                                                 )
 import           Prettyprinter.Internal
 import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
-                                                , anySingle
+                                                , anySingle, failure, customFailure, empty
                                                 )
+import Data.String (IsString)
+import GHC.Exts (IsString(fromString))
 
 -- | The 'Rank' of a playing card
 data Rank = Two | Three | Four
@@ -76,10 +75,8 @@ instance Pretty Rank where
     Ace   -> "A"
 
 instance ParsePretty Rank where
-  parsePrettyP :: PrettyParser Rank
   parsePrettyP = anySingle >>= chrToRank <?> "Rank"
    where
-    chrToRank :: Char -> PrettyParser Rank
     chrToRank = \case
       '2' -> pure Two
       '3' -> pure Three
@@ -94,14 +91,16 @@ instance ParsePretty Rank where
       'Q' -> pure Queen
       'K' -> pure King
       'A' -> pure Ace
-      chr -> tfail $ "Unknown Rank: " <> prettyText chr
+      chr -> tfailure $ "Unknown Rank: " <> prettyText chr
 
 -- | The 'Suit' of a playing card
 data Suit = Club | Diamond | Heart | Spade
   deriving (Enum, Bounded, Eq, Ord, Show, Read)
 
--- >>> toUnicode <$> ([Club, Diamond, Heart, Spade] :: [Suit])
+-- >>> toUnicode <$> [Club, Diamond, Heart, Spade]
 -- "\9827\9830\9829\9824"
+-- >>> fromJust . fromUnicode . toUnicode <$> [Club, Diamond, Heart, Spade]
+-- [Club,Diamond,Heart,Spade]
 toUnicode :: Suit -> Char
 toUnicode = \case
   Club    -> '♣'
@@ -109,8 +108,8 @@ toUnicode = \case
   Heart   -> '♥'
   Spade   -> '♠'
 
--- >>> toUnicode <$> ([Club, Diamond, Heart, Spade] :: [Suit])
--- "\9827\9830\9829\9824"
+-- >>> fromUnicode <$> ['♣', '♦', '♥', '♠']
+-- [Just Club,Just Diamond,Just Heart,Just Spade]
 fromUnicode :: Char -> Maybe Suit
 fromUnicode = \case
   '♣' -> Just Club
@@ -129,7 +128,7 @@ instance ParsePretty Suit where
   parsePrettyP = anySingle >>= chrToSuit <?> "Suit"
    where
     chrToSuit chr =
-      maybe (tfail $ "Unexpected Suit: " <> prettyText chr) pure
+      maybe (tfailure $ "Unexpected Suit: " <> prettyText chr) pure
         . Data.Map.Strict.lookup chr
         . Data.Map.Strict.fromList
         $ [('c', Club), ('d', Diamond), ('h', Heart), ('s', Spade)]
@@ -164,6 +163,10 @@ allCards = liftM2 Card enumerate enumerate
 -- the 'Hand' type is only for holdem poker
 data Hand = MkHand !Card !Card
   deriving (Eq, Ord, Show)
+
+-- TODO tests
+instance IsString Hand where
+  fromString = fromJust . parsePretty . T.pack
 
 {-# COMPLETE Hand #-}
 pattern Hand :: Card -> Card -> Hand
@@ -211,7 +214,7 @@ instance ParsePretty Hand where
   parsePrettyP = label "Hand" $ do
     c1 <- parsePrettyP
     c2 <- parsePrettyP
-    maybe (fail . T.unpack $ "Invalid card: " <> prettyText (c1, c2)) pure
+    maybe (tfailure $ "Invalid card: " <> prettyText (c1, c2)) pure
       $ mkHand c1 c2
 
 -- | A 'ShapedHand' represents the canonical representation of a
@@ -283,6 +286,7 @@ shapedHandToHands = \case
     s <- enumerate
     pure $ unsafeMkHand (Card r1 s) (Card r2 s)
 
+-- TODO needs tests
 handToShaped :: Hand -> ShapedHand
 handToShaped (Hand (Card r1 s1) (Card r2 s2))
   | r1 == r2  = mkPair r1
@@ -333,22 +337,22 @@ instance ParsePretty ShapedHand where
       's' -> if r1 == r2
         then invalidShapedFail "Suited" rs
         else pure $ unsafeMkSuited r1 r2
-      _ -> fail "Unexpected hand shape"
+      _ -> tfailure "Unexpected hand shape"
    where
     invalidShapedFail name rs =
-      tfail $ "Invalid " <> name <> " ranks: " <> prettyText rs
+      tfailure $ "Invalid " <> name <> " ranks: " <> prettyText rs
 
-newtype Deck = MkDeck [Card] deriving (Read, Show, Eq)
+newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
 
 {-# COMPLETE Deck #-}
 pattern Deck :: [Card] -> Deck
-pattern Deck c1 <- MkDeck c1
+pattern Deck c1 <- UnsafeMkDeck c1
 
 -- | A full deck with all cards
 -- TODO use template haskell to evaluate at compile time
 freshDeck :: Deck
-freshDeck = MkDeck allCards
+freshDeck = UnsafeMkDeck allCards
 
 -- | The input cards are not checked in any way.
 unsafeMkDeck :: [Card] -> Deck
-unsafeMkDeck = MkDeck
+unsafeMkDeck = UnsafeMkDeck

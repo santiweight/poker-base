@@ -1,15 +1,15 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
-
--- BIG IMPORTANT TODO GET RID OF EQ INSTANCE FOR INDEX
-
 {-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Poker.Base
-  ( module Poker.Types
-  , module Poker.ParsePretty
-  , module Poker.Pretty
+  ( module Poker.ParsePretty
+  , module Poker.Types.Cards
+  , module Poker.Types.Game
+  , module Poker.Types.BigBlind
   ) where
 
 import           Poker.ParsePretty
-import           Poker.Pretty
-import           Poker.Types
+import           Poker.Types.BigBlind
+import           Poker.Types.Cards
+import           Poker.Types.Game

@@ -35,26 +35,25 @@ sortPostflop = fmap (toEnum . fromPostFlopOrder) . sort . fmap
   fromPostFlopOrder = flip mod 6 . (+ 4)
   toPostFlopOrder   = flip mod 6 . (+ 2)
 
-
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)
 
-newtype Seat = MkSeat Int deriving (Show, Eq, Ord, Num)
+newtype Seat = Seat { _unSeat :: Int } deriving (Show, Eq, Ord, Num)
 
-newtype PotSize b = PotSize b
+newtype Pot b = Pot { _unPot :: b }
   deriving (Show, Eq, Ord, Num, Functor, Pretty)
 
-newtype StackSize b = StackSize b
+newtype Stack b = Stack { _unStack :: b }
   deriving (Show, Eq, Ord, Num, Functor, Pretty)
 
 data BetAction t
   = Call !t
   | Raise
-      { amountRaised :: !t,
+      { amountRaised :: !t, -- TODO remove?
         raisedTo :: !t
       }
   | AllInRaise
-      { amountRaisedAI :: !t,
+      { amountRaisedAI :: !t, -- TODO remove?
         raisedAITo :: !t
       }
   | Bet !t
@@ -67,7 +66,7 @@ data BetAction t
 data PlayerAction t = PlayerAction
   { position :: !Position
   , action   :: !(BetAction t)
-  , isHero   :: !IsHero
+  , isHero   :: !IsHero -- TODO remove
   }
   deriving (Read, Show, Eq, Ord, Functor)
 

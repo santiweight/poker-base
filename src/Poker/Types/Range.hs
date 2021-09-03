@@ -4,8 +4,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE DerivingVia #-}
--- {-# LANGUAGE FlexibleContexts #-}
--- {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Poker.Types.Range where
 
@@ -35,7 +33,6 @@ instance Monoid Freq where
 instance Semigroup Freq where
   (Freq l1 r1) <> (Freq l2 r2) = Freq (l1 + l2) (r1 + r2)
 
-type Count = Int
 
 -- | A simple wrapper around a Map that uses different instances
 -- for Semigroup. Normally, the Semigroup instance for Map is a left-biased Map merge.
@@ -78,13 +75,10 @@ getDecisionFreqRange
 getDecisionFreqRange p (Range m) =
   Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v) 1)) m
 
-sum :: Monoid v => Range k v -> v
-sum (Range m) = Map.foldr' (<>) mempty m
-
 holdingRangeToShapedRange :: Monoid v => Range Hand v -> Range ShapedHand v
 holdingRangeToShapedRange (Range r) =
   Range $ Map.mapKeysWith (<>) handToShaped r
 
-addShaped :: Count -> Hand -> Range ShapedHand Count -> Range ShapedHand Count
+addShaped :: Num a => a -> Hand -> Range ShapedHand a -> Range ShapedHand a
 addShaped n comb (Range r) =
   Range $ Map.alter (pure . maybe 0 (+ n)) (handToShaped comb) r

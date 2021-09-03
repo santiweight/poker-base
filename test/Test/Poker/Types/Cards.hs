@@ -1,4 +1,3 @@
-
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
@@ -20,6 +19,7 @@ import           Poker.ParsePretty
 import           Poker.Types.Cards
 import           Test.Hspec
 import           Test.Tasty.QuickCheck
+import Poker.Utils (enumerate)
 
 spec_CardPrettyAndParse :: SpecWith ()
 spec_CardPrettyAndParse = do

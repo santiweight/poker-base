@@ -24,14 +24,13 @@ library
   exposed-modules:
       Poker.Base
       Poker.ParsePretty
-      Poker.Pretty
-      Poker.Types
       Poker.Types.BigBlind
       Poker.Types.Cards
       Poker.Types.Game
       Poker.Types.Range
-  other-modules:
+      -- TODO Make Poker.Utils private and only expose enumerate?
       Poker.Utils
+  other-modules:
       Paths_poker_base
   hs-source-dirs:
       src
@@ -40,7 +39,6 @@ library
   build-depends:
     base
     , containers
-    , extra
     , megaparsec
     , prettyprinter
     , safe-money

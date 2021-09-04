@@ -13,7 +13,7 @@ import           Data.Text                      ( Text )
 import           Poker.Types.Cards
 import Prettyprinter
 
-data Position = UTG | UTG1 | UTG2 | BU | SB | BB
+data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB
   deriving (Read, Show, Enum, Bounded, Eq, Ord)
 
 instance Pretty Position where
@@ -28,12 +28,17 @@ sortPreflop = fmap toEnum . sort . fmap fromEnum
 -- | Sort a list of positions acccording to postflop ordering
 -- >>> sortPostflop $ [BB,BU,UTG1,SB,UTG,UTG2]
 -- [SB,BB,UTG,UTG1,UTG2,BU]
+-- >>> sortPostflop $ [UTG, SB, BU]
+-- [SB,UTG,BU]
+-- >>> sortPostflop $ [UTG]
+-- [UTG]
 sortPostflop :: [Position] -> [Position]
 sortPostflop = fmap (toEnum . fromPostFlopOrder) . sort . fmap
   (toPostFlopOrder . fromEnum)
  where
-  fromPostFlopOrder = flip mod 6 . (+ 4)
-  toPostFlopOrder   = flip mod 6 . (+ 2)
+  fromPostFlopOrder = flip mod numPositions . (+ (numPositions - 2))
+  toPostFlopOrder   = flip mod numPositions . (+ 2)
+  numPositions = fromEnum (maxBound @Position) - fromEnum (minBound @Position) + 1
 
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)

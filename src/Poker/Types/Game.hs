@@ -71,7 +71,6 @@ data BetAction t
 data PlayerAction t = PlayerAction
   { position :: !Position
   , action   :: !(BetAction t)
-  , isHero   :: !IsHero -- TODO remove
   }
   deriving (Read, Show, Eq, Ord, Functor)
 

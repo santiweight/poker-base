@@ -43,70 +43,13 @@ sortPostflop = fmap (toEnum . fromPostFlopOrder) . sort . fmap
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)
 
-newtype Seat = Seat { _unSeat :: Int } deriving (Show, Eq, Ord, Num)
+newtype Seat = Seat { _unSeat :: Int } deriving (Read, Show, Eq, Ord, Num)
 
 newtype Pot b = Pot { _unPot :: b }
   deriving (Show, Eq, Ord, Num, Functor, Pretty)
 
 newtype Stack b = Stack { _unStack :: b }
   deriving (Show, Eq, Ord, Num, Functor, Pretty)
-
-data BetAction t
-  = Call !t
-  | Raise
-      { amountRaised :: !t, -- TODO remove?
-        raisedTo :: !t
-      }
-  | AllInRaise
-      { amountRaisedAI :: !t, -- TODO remove?
-        raisedAITo :: !t
-      }
-  | Bet !t
-  | AllIn !t
-  | Fold
-  | Check
-  | OtherAction -- TODO remove
-  deriving (Read, Show, Eq, Ord, Functor)
-
-data PlayerAction t = PlayerAction
-  { position :: !Position
-  , action   :: !(BetAction t)
-  }
-  deriving (Read, Show, Eq, Ord, Functor)
-
-data TableAction t
-  = TableAction Position (TableActionValue t)
-  | UnknownAction
-  deriving (Read, Show, Eq, Ord, Functor)
-
-data TableActionValue t
-  = Post !t
-  | PostDead !t
-  | Leave
-  | Deposit !t
-  | Enter
-  | SitOut
-  | SitDown
-  | Showdown ![Card] !Text
-  | Muck ![Card] !Text
-  | Rejoin
-  | Return !t
-  | Result !t
-  deriving (Read, Show, Ord, Eq, Functor)
-
--- TODO Fix the below to become the above
-data DealerAction
-  = PlayerDeal
-  | FlopDeal !Card !Card !Card
-  | TurnDeal !Card
-  | RiverDeal !Card
-  deriving (Read, Show, Eq, Ord)
-
-data Action t
-  = MkPlayerAction !(PlayerAction t)
-  | MkDealerAction !DealerAction
-  | MkTableAction !(TableAction t)
-  deriving (Read, Show, Eq, Ord, Functor)
 
 data Board where
   RiverBoard :: !Card -> !Board -> Board

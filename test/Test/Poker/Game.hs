@@ -1,15 +1,15 @@
-module Test.Poker.Types.Game where
+module Test.Poker.Game where
 
 import           Control.Monad.IO.Class         ( liftIO )
 import           Data.List.Extra                ( enumerate )
 import           Debug.Trace
-import           Poker.Types.Game
 import           Test.Hspec
 import           Test.QuickCheck                ( Gen
                                                 , forAll
                                                 , shuffle
                                                 , sublistOf
                                                 )
+import Poker
 
 prop_sortPreflop :: Gen Bool
 prop_sortPreflop = do

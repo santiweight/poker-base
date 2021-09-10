@@ -5,7 +5,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE DerivingVia #-}
 
-module Poker.Types.Range where
+module Poker.Range where
 
 import           Data.Bool                      ( bool )
 import           Data.Map                       ( Map )
@@ -19,7 +19,7 @@ import           Data.Text.Prettyprint.Doc      ( (<+>)
                                                 , rbrace
                                                 , surround
                                                 )
-import           Poker.Base
+import Poker.Cards
 
 -- | A frequency is an unevaluated ratio that indicates how often a decision was
 -- made. For example, the value Freq (12, 34) indicates that out of the 34

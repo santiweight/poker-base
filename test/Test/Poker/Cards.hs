@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
-module Test.Poker.Types.Cards where
+module Test.Poker.Cards where
 
 import           Control.Applicative
 import           Control.Monad
@@ -15,11 +15,11 @@ import           Data.Maybe                     ( fromJust
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Prettyprint.Doc
-import           Poker.ParsePretty
-import           Poker.Types.Cards
+import           Poker
+import           Poker.Internal
 import           Test.Hspec
 import           Test.Tasty.QuickCheck
-import Poker.Utils (enumerate)
+import Poker.Internal (enumerate)
 
 spec_CardPrettyAndParse :: SpecWith ()
 spec_CardPrettyAndParse = do

@@ -1,7 +1,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Poker.Types.Cards
+module Poker.Cards
   ( Rank(..)
   , Suit(..)
   , Card(..)
@@ -36,21 +36,23 @@ import qualified Data.Map.Strict
 import           Data.Maybe                     ( fromJust
                                                 , fromMaybe
                                                 )
+import           Data.String                    ( IsString )
 import qualified Data.Text                     as T
+import           GHC.Exts                       ( IsString(fromString) )
 import           Poker.ParsePretty              ( ParsePretty(parsePrettyP)
-                                                , PrettyParser, parsePretty, tfailure
+                                                , parsePretty
+                                                , tfailure
                                                 )
 import           Poker.Utils                    ( atMay
+                                                , enumerate
+                                                , prettyText
                                                 , terror
-                                                , tfail, enumerate, prettyText
                                                 )
 import           Prettyprinter.Internal
 import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
-                                                , anySingle, failure, customFailure, empty
+                                                , anySingle
                                                 )
-import Data.String (IsString)
-import GHC.Exts (IsString(fromString))
 
 -- | The 'Rank' of a playing card
 data Rank = Two | Three | Four

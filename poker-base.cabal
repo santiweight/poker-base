@@ -22,15 +22,16 @@ source-repository head
 
 library
   exposed-modules:
-      Poker.Base
-      Poker.ParsePretty
-      Poker.Types.BigBlind
-      Poker.Types.Cards
-      Poker.Types.Game
-      Poker.Types.Range
-      -- TODO Make Poker.Utils private and only expose enumerate?
-      Poker.Utils
+      Poker
+      Poker.Range
+      Poker.Internal
   other-modules:
+      Poker.Amount
+      Poker.ParsePretty
+      Poker.BigBlind
+      Poker.Cards
+      Poker.Game
+      Poker.Utils
       Paths_poker_base
   hs-source-dirs:
       src
@@ -49,9 +50,9 @@ test-suite all-tests
   type: exitcode-stdio-1.0
   main-is: Driver.hs
   other-modules:
-      Test.Poker.Types.Cards
-      Test.Poker.Types.Game
-      Test.Poker.Types.Range
+      Test.Poker.Cards
+      Test.Poker.Game
+      Test.Poker.Range
       Paths_poker_base
   hs-source-dirs:
       test

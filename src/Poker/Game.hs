@@ -6,11 +6,10 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Poker.Types.Game where
+module Poker.Game where
 
 import           Data.List                      ( sort )
-import           Data.Text                      ( Text )
-import           Poker.Types.Cards
+import           Poker.Cards
 import Prettyprinter
 
 data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB

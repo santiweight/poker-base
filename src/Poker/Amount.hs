@@ -12,23 +12,26 @@ import           Money                          ( CurrencyScale
                                                 )
 
 data Amount (b :: Symbol) where
-  Amount ::(GoodScale (CurrencyScale b), KnownSymbol b) => Discrete' b (CurrencyScale b) -> Amount b
+  Amount :: (GoodScale (CurrencyScale b), KnownSymbol b) => { _unAmount :: Discrete' b (CurrencyScale b) } -> Amount b
 
 deriving instance Show (Amount b)
 deriving instance Eq (Amount b)
 deriving instance Ord (Amount b)
 
--- TODO :)
-instance (GoodScale (CurrencyScale b), KnownSymbol b) => Num (Amount b) where
-  (Amount dis) + (Amount dis') = Amount $ dis + dis'
-  (Amount dis) * (Amount dis') = Amount $ dis * dis'
-  abs    = undefined
-  signum = undefined
-  fromInteger int = Amount . discrete $ int
-  negate (Amount dis) = Amount $ negate dis
+class Monoid b => IsBet b where
+  smallestAmount :: b
+  minus :: b -> b -> Maybe b
 
-class SmallAmount a where
-  smallestAmount :: a
+add :: IsBet b => b -> b -> b
+add = (<>)
 
-instance (GoodScale (CurrencyScale b), KnownSymbol b) => SmallAmount (Amount b) where
+instance Semigroup (Amount b) where
+  (Amount dis) <> (Amount dis') = Amount $ dis + dis'
+
+instance (GoodScale (CurrencyScale b), KnownSymbol b) => Monoid (Amount b) where
+  mempty = Amount $ discrete 0
+
+instance (GoodScale (CurrencyScale b), KnownSymbol b) => IsBet (Amount b) where
   smallestAmount = Amount $ discrete 1 :: Amount b
+  Amount l `minus` Amount r | r > l     = Nothing
+                            | otherwise = Just $ Amount $ l - r

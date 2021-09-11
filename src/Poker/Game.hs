@@ -11,6 +11,7 @@ module Poker.Game where
 import           Data.List                      ( sort )
 import           Poker.Cards
 import Prettyprinter
+import GHC.Base (Semigroup)
 
 data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB
   deriving (Read, Show, Enum, Bounded, Eq, Ord)
@@ -45,10 +46,10 @@ data IsHero = Hero | Villain
 newtype Seat = Seat { _unSeat :: Int } deriving (Read, Show, Eq, Ord, Num)
 
 newtype Pot b = Pot { _unPot :: b }
-  deriving (Show, Eq, Ord, Num, Functor, Pretty)
+  deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup, Monoid)
 
 newtype Stack b = Stack { _unStack :: b }
-  deriving (Show, Eq, Ord, Num, Functor, Pretty)
+  deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup)
 
 data Board where
   RiverBoard :: !Card -> !Board -> Board

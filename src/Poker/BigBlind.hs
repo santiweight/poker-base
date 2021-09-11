@@ -6,12 +6,11 @@ module Poker.BigBlind where
 import           GHC.Generics                   ( Generic )
 import           Money                          ( CurrencyScale
                                                 , Dense
-                                                , Discrete
                                                 , UnitScale
                                                 , denseFromDiscrete
                                                 , discrete
                                                 )
-import           Poker.Amount                   ( SmallAmount(smallestAmount) )
+import           Poker.Amount
 
 -- | Big blinds are encoded using the safe-money package.
 -- Calculations in the safe-money package are done with Discrete and Dense
@@ -28,14 +27,11 @@ type instance UnitScale "BB" "bb"
 
 type instance CurrencyScale "BB" = UnitScale "BB" "bb"
 
-newtype BigBlind = MkBigBlind { _unBigBlind :: Discrete "BB" "bb" }
-  deriving (Show, Generic, Eq, Ord, Num, Fractional, Real)
-
-instance SmallAmount BigBlind where
-  smallestAmount = smallestAmountBigBlind
+newtype BigBlind = BigBlind { _unBigBlind :: Amount "BB" }
+  deriving (Show, Generic, Eq, Ord, IsBet, Semigroup, Monoid)
 
 bigBlindToDense :: BigBlind -> Dense "BB"
-bigBlindToDense = denseFromDiscrete . _unBigBlind
+bigBlindToDense = denseFromDiscrete . _unAmount . _unBigBlind
 
 smallestAmountBigBlind :: BigBlind
-smallestAmountBigBlind = MkBigBlind $ discrete 1
+smallestAmountBigBlind = BigBlind . Amount $ discrete 1

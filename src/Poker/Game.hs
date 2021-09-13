@@ -1,19 +1,12 @@
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Poker.Game where
 
 import           Data.List                      ( sort )
 import           Poker.Cards
 import Prettyprinter
+import Data.Data
 
 data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB
-  deriving (Read, Show, Enum, Bounded, Eq, Ord)
+  deriving (Read, Show, Enum, Bounded, Eq, Ord, Data, Typeable)
 
 instance Pretty Position where
   pretty = viaShow

@@ -18,7 +18,7 @@ deriving instance Show (Amount b)
 deriving instance Eq (Amount b)
 deriving instance Ord (Amount b)
 
-class Monoid b => IsBet b where
+class (Ord b, Monoid b) => IsBet b where
   smallestAmount :: b
   minus :: b -> b -> Maybe b
 

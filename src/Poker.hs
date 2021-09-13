@@ -1,7 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-
 module Poker
   ( module Poker.Amount
   , module Poker.BigBlind

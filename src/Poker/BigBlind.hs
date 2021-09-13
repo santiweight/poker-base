@@ -1,5 +1,4 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Poker.BigBlind where
 

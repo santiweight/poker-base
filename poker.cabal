@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 3.0
 
 name:           poker
 version:        0.1.0.0
@@ -10,22 +10,55 @@ bug-reports:    https://github.com/santiweight/poker/issues
 author:         Santiago Weight
 maintainer:     santiago.weight@gmail.com
 copyright:      2019 Santiago Weight
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
+
 extra-source-files:
     README.md
     ChangeLog.md
 
 source-repository head
   type: git
-  location: https://github.com/santiweight/Exploit
+  location: https://github.com/santiweight/poker
 
+common poker-common
+  default-extensions:
+    ConstraintKinds
+    DataKinds
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    LambdaCase
+    MultiParamTypeClasses
+    PatternSynonyms
+    PolyKinds
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    TypeApplications
+    TypeOperators
+    TypeFamilies
+    TemplateHaskell
+  build-depends:
+    base >=4.13 && <5.0,
+    text >=0.2 && <1.3,
+    containers >=0.5 && <0.7,
+  ghc-options: -Wall
 
 library
+  import: poker-common
   exposed-modules:
       Poker
       Poker.Range
+      -- TODO Rewrite tests so this doesn't have to be exposed
       Poker.Internal
   other-modules:
       Poker.Amount
@@ -34,45 +67,37 @@ library
       Poker.Cards
       Poker.Game
       Poker.Utils
-      Paths_poker_base
   hs-source-dirs:
       src
-  default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
   ghc-options: -Wall
   build-depends:
-    base
-    , containers
-    , megaparsec
-    , prettyprinter
-    , safe-money
-    , text
+    megaparsec,
+    prettyprinter,
+    safe-money
   default-language: Haskell2010
 
 test-suite all-tests
+  import: poker-common
   type: exitcode-stdio-1.0
   main-is: Driver.hs
   other-modules:
       Test.Poker.Cards
       Test.Poker.Game
       Test.Poker.Range
-      Paths_poker_base
   hs-source-dirs:
       test
   default-extensions: ConstraintKinds DataKinds DeriveDataTypeable DeriveFunctor DeriveGeneric DeriveTraversable EmptyCase FlexibleContexts GADTs LambdaCase LiberalTypeSynonyms PartialTypeSignatures PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeOperators TypeFamilies UnicodeSyntax TemplateHaskell
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       QuickCheck
-    , base
-    , containers
     , extra
     , hspec
     , megaparsec
-    , poker-base
+    , poker
     , prettyprinter
     , safe-money
     , tasty
     , tasty-discover
     , tasty-hspec
     , tasty-quickcheck
-    , text
   default-language: Haskell2010

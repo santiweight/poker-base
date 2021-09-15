@@ -10,6 +10,7 @@ import           Money                          ( CurrencyScale
                                                 , GoodScale
                                                 , discrete
                                                 )
+import Prettyprinter (Pretty (pretty), viaShow)
 
 data Amount (b :: Symbol) where
   Amount :: (GoodScale (CurrencyScale b), KnownSymbol b) => { _unAmount :: Discrete' b (CurrencyScale b) } -> Amount b
@@ -17,8 +18,10 @@ data Amount (b :: Symbol) where
 deriving instance Show (Amount b)
 deriving instance Eq (Amount b)
 deriving instance Ord (Amount b)
+instance Pretty (Amount b) where
+  pretty = viaShow
 
-class (Ord b, Monoid b) => IsBet b where
+class (Show b, Ord b, Monoid b) => IsBet b where
   smallestAmount :: b
   minus :: b -> b -> Maybe b
 

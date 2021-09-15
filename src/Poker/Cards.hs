@@ -174,9 +174,6 @@ instance IsString Hand where
 pattern Hand :: Card -> Card -> Hand
 pattern Hand c1 c2 <- MkHand c1 c2
 
-pattern MatchCard :: Int -> Int -> Card
-pattern MatchCard r s <- Card (fromEnum -> r) (fromEnum -> s)
-
 mkHand :: Card -> Card -> Maybe Hand
 mkHand c1 c2 | c1 /= c2  = Just $ if c2 > c1 then MkHand c2 c1 else MkHand c1 c2
              | otherwise = Nothing

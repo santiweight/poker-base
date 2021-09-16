@@ -53,6 +53,7 @@ import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
                                                 , anySingle
                                                 )
+import GHC.Stack (HasCallStack)
 
 -- | The 'Rank' of a playing card
 data Rank = Two | Three | Four
@@ -225,6 +226,7 @@ instance ParsePretty Hand where
 data ShapedHand = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
  deriving (Eq, Ord, Show, Read)
 
+
 {-# COMPLETE Pair, Offsuit, Suited #-}
 pattern Pair :: Rank -> ShapedHand
 pattern Pair r1 <- MkPair r1
@@ -253,7 +255,7 @@ mkOffsuit r1 r2
   | r1 /= r2  = Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
   | otherwise = Nothing
 
-unsafeMkOffsuit :: Rank -> Rank -> ShapedHand
+unsafeMkOffsuit :: HasCallStack => Rank -> Rank -> ShapedHand
 unsafeMkOffsuit r1 r2 =
   fromMaybe (terror $ "Cannot form offsuit hand from: " <> prettyText (r1, r2))
     $ mkOffsuit r1 r2
@@ -293,7 +295,7 @@ handToShaped :: Hand -> ShapedHand
 handToShaped (Hand (Card r1 s1) (Card r2 s2))
   | r1 == r2  = mkPair r1
   | s1 == s2  = unsafeMkSuited r1 r2
-  | otherwise = unsafeMkOffsuit r1 r1
+  | otherwise = unsafeMkOffsuit r1 r2
 
 instance Enum ShapedHand where
   toEnum num =

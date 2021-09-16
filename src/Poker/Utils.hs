@@ -6,8 +6,9 @@ import           Prettyprinter                  ( Pretty(pretty)
                                                 , layoutCompact
                                                 )
 import           Prettyprinter.Render.Text      ( renderStrict )
+import GHC.Stack
 
-terror :: Text -> a
+terror :: HasCallStack => Text -> a
 terror = error . T.unpack
 
 tfail :: (MonadFail m) => Text -> m a

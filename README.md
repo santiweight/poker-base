@@ -30,7 +30,7 @@ I use this library in a couple different little projects I work on at home. Some
  - poker-history: a library for parsing poker site hand histories. I currently support PokerStars and Bovada - if you have any hand databases for other sites, I will happily support them.
  - poker-reflex: a collection of different [reflex-frp](https://reflex-frp.org/) JS widgets for stuff like showing a range or poker table with statefulness.
 
-I also use this library for some private work that I use to study poker, when I get the chance, which is not often :(
+I also use this library for some private work that I use to study poker, when I get the chance, which is not often :(, but I'm always excited to talk about it!
 
 ## Let's Collaborate!
 

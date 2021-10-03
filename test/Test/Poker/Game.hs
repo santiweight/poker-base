@@ -1,13 +1,11 @@
 module Test.Poker.Game where
 
-import           Control.Monad.IO.Class         ( liftIO )
 import           Data.List.Extra                ( enumerate )
-import           Debug.Trace
 import           Test.Hspec
 import           Test.QuickCheck                ( Gen
                                                 , forAll
                                                 , shuffle
-                                                , sublistOf
+                                                , sublistOf, Property
                                                 )
 import Poker
 
@@ -17,7 +15,7 @@ prop_sortPreflop = do
   shuffledPositions <- shuffle somePositions
   pure $ sortPreflop shuffledPositions == somePositions
 
--- prop_sortPostflop :: Gen Bool
+prop_sortPostflop :: Property
 prop_sortPostflop = do
   forAll (sublistOf postFlopPositions) $ \positions ->
     forAll (shuffle positions) $ \shuffledPositions -> do

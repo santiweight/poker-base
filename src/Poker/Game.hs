@@ -1,10 +1,21 @@
+{-# LANGUAGE CPP #-}
+
+-- TODO fix exports
 module Poker.Game where
 
 import           Data.List                      ( sort )
 import           Poker.Cards
+#if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
+#else
+import Data.Text.Prettyprint.Doc
+#endif
 import Data.Data
 
+-- | A player's position in a game of poker.
+--
+-- Future iterations of this library will use a safer/less-hacky representation
+-- for 'Position'
 data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB
   deriving (Read, Show, Enum, Bounded, Eq, Ord, Data, Typeable)
 
@@ -12,8 +23,13 @@ instance Pretty Position where
   pretty = viaShow
 
 -- | Sort a list of positions according to preflop ordering
+--
+-- WARNING, TODO: This function does not yet handle heads-up appropriately
+--
 -- >>> sortPreflop $ [BB,BU,UTG1,SB,UTG,UTG2]
 -- [UTG,UTG1,UTG2,BU,SB,BB]
+-- >>> sortPreflop [SB, BB]
+-- [SB,BB]
 sortPreflop :: [Position] -> [Position]
 sortPreflop = fmap toEnum . sort . fmap fromEnum
 
@@ -54,5 +70,23 @@ data Board where
 instance Pretty Board where
   pretty = viaShow
 
-newtype Stake b = Stake { getStake :: b }
+newtype Stake b = Stake { unStake :: b }
   deriving (Read, Show, Eq, Functor, Ord, Pretty)
+
+data BetAction t
+  = Call !t
+  | Raise
+      { raiseBy :: !t, -- TODO remove?
+        raiseTo :: !t
+      }
+  -- TODO remove AllInRaise
+  | AllInRaise
+      { amountRaisedAI :: !t, -- TODO remove?
+        raisedAITo :: !t
+      }
+  | Bet !t
+  -- TODO remove AllIn
+  | AllIn !t
+  | Fold
+  | Check
+  deriving (Read, Show, Eq, Ord, Functor, Data, Typeable)

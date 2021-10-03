@@ -1,4 +1,0 @@
-optimization: 0
-
-package poker-base
-  ghc-options: -j8 +RTS -A128m -n2m -RTS

@@ -1,18 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP #-}
 
+-- TODO fix exports
 module Poker.Cards
   ( Rank(..)
   , Suit(..)
   , Card(..)
-  , Hand
+  , Hand(..)
   , pattern Hand
-  , ParsePretty(..)
   , mkHand
-  , ShapedHand
+  , ShapedHand(..)
   , mkPair
   , mkOffsuit
   , mkSuited
+  , listShapedHands
   , Deck
   , freshDeck
   , unsafeMkDeck
@@ -27,6 +29,9 @@ module Poker.Cards
   , unsafeMkHand
   , unsafeMkSuited
   , unsafeMkOffsuit
+  , allSuits
+  , allRanks
+  , allCards
   ) where
 
 import           Control.Applicative            ( Applicative(liftA2) )
@@ -38,7 +43,14 @@ import           Data.Maybe                     ( fromJust
                                                 )
 import           Data.String                    ( IsString )
 import qualified Data.Text                     as T
+#if MIN_VERSION_prettyprinter(1,7,0)
+import Prettyprinter
+import Prettyprinter.Internal ( unsafeTextWithoutNewlines )
+#else
+import           Data.Text.Prettyprint.Doc.Internal
+#endif
 import           GHC.Exts                       ( IsString(fromString) )
+import           GHC.Stack                      ( HasCallStack )
 import           Poker.ParsePretty              ( ParsePretty(parsePrettyP)
                                                 , parsePretty
                                                 , tfailure
@@ -48,14 +60,12 @@ import           Poker.Utils                    ( atMay
                                                 , prettyText
                                                 , terror
                                                 )
-import           Prettyprinter.Internal
 import           Text.Megaparsec                ( (<?>)
                                                 , MonadParsec(label)
                                                 , anySingle
                                                 )
-import GHC.Stack (HasCallStack)
 
--- | The 'Rank' of a playing card
+-- | The 'Rank' of a playing 'Card'
 data Rank = Two | Three | Four
           | Five | Six | Seven | Eight | Nine | Ten
           | Jack | Queen | King | Ace
@@ -96,11 +106,36 @@ instance ParsePretty Rank where
       'A' -> pure Ace
       chr -> tfailure $ "Unknown Rank: " <> prettyText chr
 
--- | The 'Suit' of a playing card
+-- | >>> allRanks
+-- [Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King,Ace]
+allRanks :: [Rank]
+allRanks = enumerate @Rank
+
+-- | The 'Suit' of a playing 'Card'
 data Suit = Club | Diamond | Heart | Spade
   deriving (Enum, Bounded, Eq, Ord, Show, Read)
 
--- >>> toUnicode <$> [Club, Diamond, Heart, Spade]
+instance Pretty Suit where
+  pretty Club    = "c"
+  pretty Diamond = "d"
+  pretty Heart   = "h"
+  pretty Spade   = "s"
+
+instance ParsePretty Suit where
+  parsePrettyP = anySingle >>= chrToSuit <?> "Suit"
+   where
+    chrToSuit chr =
+      maybe (tfailure $ "Unexpected Suit: " <> prettyText chr) pure
+        . Data.Map.Strict.lookup chr
+        . Data.Map.Strict.fromList
+        $ [('c', Club), ('d', Diamond), ('h', Heart), ('s', Spade)]
+
+-- | >>> allSuits
+-- [Club,Diamond,Heart,Spade]
+allSuits :: [Suit]
+allSuits = enumerate @Suit
+
+-- | >>> toUnicode <$> [Club, Diamond, Heart, Spade]
 -- "\9827\9830\9829\9824"
 -- >>> fromJust . fromUnicode . toUnicode <$> [Club, Diamond, Heart, Spade]
 -- [Club,Diamond,Heart,Spade]
@@ -120,21 +155,6 @@ fromUnicode = \case
   '♥' -> Just Heart
   '♠' -> Just Spade
   _   -> Nothing
-
-instance Pretty Suit where
-  pretty Club    = "c"
-  pretty Diamond = "d"
-  pretty Heart   = "h"
-  pretty Spade   = "s"
-
-instance ParsePretty Suit where
-  parsePrettyP = anySingle >>= chrToSuit <?> "Suit"
-   where
-    chrToSuit chr =
-      maybe (tfailure $ "Unexpected Suit: " <> prettyText chr) pure
-        . Data.Map.Strict.lookup chr
-        . Data.Map.Strict.fromList
-        $ [('c', Club), ('d', Diamond), ('h', Heart), ('s', Spade)]
 
 -- | Representation of a playing card.
 data Card = Card
@@ -160,10 +180,9 @@ instance Bounded Card where
 
 -- | All cards in deck
 allCards :: [Card]
-allCards = liftM2 Card enumerate enumerate
+allCards = liftM2 Card allRanks allSuits
 
--- | A 'Hand' is the hand that a player was dealt. Currently
--- the 'Hand' type is only for holdem poker
+-- | 'Hand' represents a player's hole cards in a game of Texas Hold\'Em
 data Hand = MkHand !Card !Card
   deriving (Eq, Ord, Show)
 
@@ -175,15 +194,23 @@ instance IsString Hand where
 pattern Hand :: Card -> Card -> Hand
 pattern Hand c1 c2 <- MkHand c1 c2
 
+-- | Returns a 'Hand' if the incoming 'Card's are unique, else 'Nothing'.
+-- Note that the internal representation of 'Hand' is normalised:
+--
+-- prop> mkHand c1 c2 == mkHand c2 c1
 mkHand :: Card -> Card -> Maybe Hand
 mkHand c1 c2 | c1 /= c2  = Just $ if c2 > c1 then MkHand c2 c1 else MkHand c1 c2
              | otherwise = Nothing
 
+-- | Unsafely creates a new 'Hand'. The two input 'Card's are expected to be
+-- unique, and the first 'Card' should be less than the second 'Card' (as defined by
+-- 'Ord'). See 'mkHand' for a safe way to create 'Hand's.
 unsafeMkHand :: Card -> Card -> Hand
 unsafeMkHand c1 c2 =
   fromMaybe (terror $ "Cannot form a Hand from " <> prettyText (c1, c2))
     $ mkHand c1 c2
 
+-- | All possible Hold'Em poker 'Hand's
 allHands :: [Hand]
 allHands = reverse $ do
   r1       <- enumerate
@@ -220,16 +247,34 @@ instance ParsePretty Hand where
     maybe (tfailure $ "Invalid card: " <> prettyText (c1, c2)) pure
       $ mkHand c1 c2
 
--- | A 'ShapedHand' represents the canonical representation of a
--- poker hand. For example, (King Diamonds, Five Heart), would
--- TODO Make patterns uni-directional (don't expose constructors)
+{- |
+A 'ShapedHand' is the 'Suit'-normalised representation of a
+poker 'Hand'. For example, the 'Hand' "King of Diamonds, 5 of Hearts" is often referred
+to as "King-5 offsuit".
+
+>>> pretty $ mkPair Two
+22p
+
+pair : 22p
+offsuit : 24o
+suited : 24s
+
+>>> import Poker.ParsePretty
+>>> parsePretty @ShapedHand "22p"
+Just (MkPair Two)
+>>> parsePretty @ShapedHand "24o"
+Just (MkOffsuit Four Two)
+>>> parsePretty @ShapedHand "24s"
+Just (MkSuited Four Two)
+
+TODO Make patterns uni-directional (don't expose constructors)
+-}
 data ShapedHand = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
  deriving (Eq, Ord, Show, Read)
 
-
 {-# COMPLETE Pair, Offsuit, Suited #-}
 pattern Pair :: Rank -> ShapedHand
-pattern Pair r1 <- MkPair r1
+pattern Pair r <- MkPair r
 
 pattern Offsuit :: Rank -> Rank -> ShapedHand
 pattern Offsuit r1 r2 <- MkOffsuit r1 r2
@@ -269,7 +314,7 @@ listShapedHands = reverse $ do
     EQ -> mkPair rank1
     LT -> unsafeMkOffsuit rank1 rank2
 
--- >>> import Poker.ParsePretty
+-- | >>> import Poker.ParsePretty
 -- >>> pretty . shapedHandToHands $ unsafeParsePretty "55p"
 -- [5d5c, 5h5c, 5s5c, 5h5d, 5s5d, 5s5h]
 -- >>> pretty . shapedHandToHands $ unsafeParsePretty "97o"
@@ -311,23 +356,11 @@ instance Bounded ShapedHand where
   minBound = head listShapedHands
   maxBound = last listShapedHands
 
--- >>> pretty $ Pair Two
--- 22p
 instance Pretty ShapedHand where
   pretty (Offsuit r1 r2) = pretty r1 <> pretty r2 <> "o"
   pretty (Suited  r1 r2) = pretty r1 <> pretty r2 <> "s"
   pretty (Pair r       ) = pretty r <> pretty r <> "p"
 
--- | pair : 22p
--- offsuit : 24o
--- suited : 24s
--- >>> import Poker.ParsePretty
--- >>> parsePretty @ShapedHand "22p"
--- Just (Pair Two)
--- >>> parsePretty @ShapedHand "24o"
--- Just (Offsuit Two Four)
--- >>> parsePretty @ShapedHand "24s"
--- Just (Suited Two Four)
 instance ParsePretty ShapedHand where
   parsePrettyP = label "ShapedHand" $ do
     r1 <- parsePrettyP @Rank
@@ -349,11 +382,11 @@ instance ParsePretty ShapedHand where
 newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
 
 {-# COMPLETE Deck #-}
-{-# LANGUAGE ViewPatterns #-}
 pattern Deck :: [Card] -> Deck
 pattern Deck c1 <- UnsafeMkDeck c1
 
 -- | A full deck with all cards
+--
 -- TODO use template haskell to evaluate at compile time
 freshDeck :: Deck
 freshDeck = UnsafeMkDeck allCards

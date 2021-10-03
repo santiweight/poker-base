@@ -1,11 +1,15 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE CPP #-}
 
 module Poker.Range where
 
 import           Data.Bool                      ( bool )
 import           Data.Map                       ( Map )
 import qualified Data.Map.Strict               as Map
+#if MIN_VERSION_prettyprinter(1,7,0)
+import Prettyprinter
+#else
 import           Data.Text.Prettyprint.Doc      ( (<+>)
                                                 , Pretty(pretty)
                                                 , colon
@@ -15,6 +19,7 @@ import           Data.Text.Prettyprint.Doc      ( (<+>)
                                                 , rbrace
                                                 , surround
                                                 )
+#endif
 import Poker.Cards
 
 -- | A frequency is an unevaluated ratio that indicates how often a decision was
@@ -28,7 +33,6 @@ instance Monoid Freq where
 
 instance Semigroup Freq where
   (Freq l1 r1) <> (Freq l2 r2) = Freq (l1 + l2) (r1 + r2)
-
 
 -- | A simple wrapper around a Map that uses different instances
 -- for Semigroup. Normally, the Semigroup instance for Map is a left-biased Map merge.

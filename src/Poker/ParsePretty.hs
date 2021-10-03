@@ -22,4 +22,3 @@ parsePretty = parseMaybe $ parsePrettyP @_ @Void
 
 unsafeParsePretty :: ParsePretty a => Text -> a
 unsafeParsePretty txt = fromMaybe (terror $ "Not a valid value: " <> txt) . parsePretty $ txt
-

@@ -1,11 +1,19 @@
+{-# language CPP #-}
 module Poker.Utils where
 
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
+#if MIN_VERSION_prettyprinter(1,7,0)
 import           Prettyprinter                  ( Pretty(pretty)
                                                 , layoutCompact
                                                 )
 import           Prettyprinter.Render.Text      ( renderStrict )
+#else
+import Data.Text.Prettyprint.Doc ( Pretty(pretty)
+                                                , layoutCompact
+                                                )
+import           Data.Text.Prettyprint.Doc.Render.Text      ( renderStrict )
+#endif
 import GHC.Stack
 
 terror :: HasCallStack => Text -> a

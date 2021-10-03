@@ -92,10 +92,13 @@ unsafeMkAmount = UnsafeMkAmount
 {- |
 A type @b@ satisfies 'IsBet' if we know:
 
+  * A 'Monoid' instance for @b@. This allows us to construct a zero amount of @b@ and
+    to 'add' two amounts of @b@ together.
+
   * the smallest non-zero currency unit for @b@ ('smallestAmount'). For example, for USD the minimum currency amount
     is $0.01.
 
-  * how to 'add' two @b@s.
+  * how to 'add' two @b@s. By default, this is the 'Monoid' instance's 'append' for @b@.
 
   * how to 'minus' two @b@s, which may fail (returning 'Nothing'), if the resulting 'Amount' is negative.
 
@@ -104,10 +107,12 @@ can handle arbitrary new user bet types.
 
 For an example instance of the 'IsBet' class, see "Poker.BigBlind".
 -}
-class (Show b, Ord b) => IsBet b where
+class (Monoid b, Show b, Ord b) => IsBet b where
   smallestAmount :: b
   minus :: b -> b -> Maybe b
   add :: b -> b -> b
+  default add :: Monoid b => b -> b -> b
+  add = (<>)
 
 -- TODO There's probably some way to avoid repeating the Constraints in the typeclasses,
 -- since they are implied by the constructor of Amount. However this might require some

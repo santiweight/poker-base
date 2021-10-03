@@ -11,6 +11,7 @@ import Prettyprinter
 import Data.Text.Prettyprint.Doc
 #endif
 import Data.Data
+import Poker.Utils (enumerate)
 
 -- | A player's position in a game of poker.
 --
@@ -21,6 +22,11 @@ data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB
 
 instance Pretty Position where
   pretty = viaShow
+
+-- >>> allPositions
+-- [UTG,UTG1,UTG2,UTG3,UTG4,UTG5,BU,SB,BB]
+allPositions :: [Position]
+allPositions = enumerate @Position
 
 -- | Sort a list of positions according to preflop ordering
 --

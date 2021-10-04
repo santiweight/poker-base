@@ -2,7 +2,7 @@
 
 Basic datatypes for writing code that handles poker (poker simulation, a poker website, solver etc.). Most datatypes and their functions are well-tested; untested functions are generally documented. The goal is to eventually reach 100% code coverage and for this package to be kept to a high industrial quality.
 
-Pull requests or suggestions (preferably created in an issue), are not just encouraged but highly. I should be highly responsive for the foreseeable future.
+Pull requests or suggestions (preferably created in an issue), are not just encouraged but highly requested! I should be highly responsive for the foreseeable future.
 
 ## Goal
 

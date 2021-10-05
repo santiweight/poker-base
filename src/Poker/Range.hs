@@ -1,12 +1,12 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Poker.Range where
 
-import           Data.Bool                      ( bool )
-import           Data.Map                       ( Map )
-import qualified Data.Map.Strict               as Map
+import Data.Bool (bool)
+import Data.Map (Map)
+import qualified Data.Map.Strict as Map
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
 #else
@@ -49,9 +49,8 @@ instance Semigroup Freq where
 -- >>> let right = fromList [(unsafeParsePretty $ T.pack"55p", Freq 10 32)]
 -- >>> left <> right
 -- Range {_range = fromList [(MkPair Five,Freq 11 35)]}
-newtype Range a b
-  = Range
-      {_range :: Map a b}
+newtype Range a b = Range
+  {_range :: Map a b}
   deriving (Read, Eq, Show)
 
 fromList :: Ord a => [(a, b)] -> Range a b
@@ -62,20 +61,22 @@ instance (Ord a, Monoid b) => Monoid (Range a b) where
 
 instance (Ord a, Monoid b) => Semigroup (Range a b) where
   Range x <> Range y = Range $ x `uniRange` y
-    where uniRange = Map.unionWith (<>)
+    where
+      uniRange = Map.unionWith (<>)
 
 instance (Pretty a, Pretty b) => Pretty (Range a b) where
   pretty ran =
-    let m            = Map.toList $ _range ran
-        prettyValues = concatWith (surround comma)
-          $ map (\(c, i) -> pretty c <+> colon <+> pretty i) m
-    in  lbrace <+> prettyValues <+> rbrace
+    let m = Map.toList $ _range ran
+        prettyValues =
+          concatWith (surround comma) $
+            map (\(c, i) -> pretty c <+> colon <+> pretty i) m
+     in lbrace <+> prettyValues <+> rbrace
 
 -- | Converts a Range from key to action, to a Range from key to decision
 -- frequency, given a predicate that returns True if the action matched the
 -- decision.
-getDecisionFreqRange
-  :: Foldable f => (b -> Bool) -> Range a (f b) -> Range a Freq
+getDecisionFreqRange ::
+  Foldable f => (b -> Bool) -> Range a (f b) -> Range a Freq
 getDecisionFreqRange p (Range m) =
   Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v) 1)) m
 

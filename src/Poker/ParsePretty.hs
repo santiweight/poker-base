@@ -2,12 +2,12 @@
 
 module Poker.ParsePretty where
 
-import Text.Megaparsec (Parsec, parseMaybe, MonadParsec, (<?>), empty)
-import Data.Void (Void)
-import Data.Text (Text)
 import Data.Maybe (fromMaybe)
-import Poker.Utils (terror)
+import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Void (Void)
+import Poker.Utils (terror)
+import Text.Megaparsec (MonadParsec, Parsec, empty, parseMaybe, (<?>))
 
 type PrettyParser a = Parsec Void Text a
 

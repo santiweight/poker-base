@@ -6,33 +6,34 @@
 -- TODO fix exports
 module Poker.Cards
   ( Rank (..),
+    allRanks,
     Suit (..),
+    allSuits,
+    suitToUnicode,
+    suitFromUnicode,
     Card (..),
+    allCards,
     Hand (..),
     pattern Hand,
     mkHand,
+    unsafeMkHand,
+    allHands,
     ShapedHand (..),
-    mkPair,
-    mkOffsuit,
-    mkSuited,
-    listShapedHands,
-    Deck,
-    freshDeck,
-    unsafeMkDeck,
-    handToShaped,
-    shapedHandToHands,
-    toUnicode,
-    fromUnicode,
-    pattern Deck,
     pattern Offsuit,
     pattern Pair,
     pattern Suited,
-    unsafeMkHand,
+    mkPair,
+    mkOffsuit,
+    mkSuited,
     unsafeMkSuited,
     unsafeMkOffsuit,
-    allSuits,
-    allRanks,
-    allCards,
+    listShapedHands,
+    handToShaped,
+    Deck,
+    pattern Deck,
+    freshDeck,
+    unsafeMkDeck,
+    shapedHandToHands,
   )
 where
 
@@ -152,21 +153,21 @@ instance ParsePretty Suit where
 allSuits :: [Suit]
 allSuits = enumerate @Suit
 
--- | >>> toUnicode <$> [Club, Diamond, Heart, Spade]
+-- | >>> suitToUnicode <$> [Club, Diamond, Heart, Spade]
 -- "\9827\9830\9829\9824"
--- >>> fromJust . fromUnicode . toUnicode <$> [Club, Diamond, Heart, Spade]
+-- >>> fromJust . suitFromUnicode . suitToUnicode <$> [Club, Diamond, Heart, Spade]
 -- [Club,Diamond,Heart,Spade]
-toUnicode :: Suit -> Char
-toUnicode = \case
+suitToUnicode :: Suit -> Char
+suitToUnicode = \case
   Club -> '♣'
   Diamond -> '♦'
   Heart -> '♥'
   Spade -> '♠'
 
--- >>> fromUnicode <$> ['♣', '♦', '♥', '♠']
+-- >>> suitFromUnicode <$> ['♣', '♦', '♥', '♠']
 -- [Just Club,Just Diamond,Just Heart,Just Spade]
-fromUnicode :: Char -> Maybe Suit
-fromUnicode = \case
+suitFromUnicode :: Char -> Maybe Suit
+suitFromUnicode = \case
   '♣' -> Just Club
   '♦' -> Just Diamond
   '♥' -> Just Heart
@@ -230,6 +231,8 @@ unsafeMkHand c1 c2 =
     mkHand c1 c2
 
 -- | All possible Hold'Em poker 'Hand's
+--
+-- TODO add tests
 allHands :: [Hand]
 allHands = reverse $ do
   r1 <- enumerate

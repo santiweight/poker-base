@@ -1,3 +1,8 @@
+## poker-base
+
+[![Hackage](https://img.shields.io/hackage/v/poker-base.svg)](https://hackage.haskell.org/package/poker-base)
+[![Build Status](https://github.com/santiweight/poker-base/workflows/haskell-ci/badge.svg)](https://github.com/santiweight/poker-base/actions?query=workflow%3Ahaskell-ci) [![Hackage Deps](https://img.shields.io/hackage-deps/v/poker-base.svg)](http://packdeps.haskellers.com/reverse/{{name}})
+
 ## Description
 
 Basic datatypes for writing code that handles poker (poker simulation, a poker website, solver etc.). Most datatypes and their functions are well-tested; untested functions are generally documented. The goal is to eventually reach 100% code coverage and for this package to be kept to a high industrial quality.

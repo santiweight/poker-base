@@ -1,0 +1,54 @@
+on: [push]
+name: build
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc: ['8.10.7', '9.0.1']
+        cabal: ['3.4.0.0']
+        os: [ubuntu-latest, macOS-latest]
+    name: ghc ${{ matrix.ghc }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Haskell
+        uses: haskell/actions/setup@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+      - if: ${{ matrix.os == 'windows-latest'}}
+        name: Set window paths
+        run: |
+          echo "CABAL_STORE_DIR=$SYSTEMDRIVE\\SR" >> $GITHUB_ENV
+          echo "CABAL_PKGS_DIR=~\\AppData\\cabal\\packages" >> $GITHUB_ENV
+      - if: ${{ matrix.os != 'windows-latest'}}
+        name: Set linux/macOS paths
+        run: |
+          echo "CABAL_STORE_DIR=~/.cabal/store" >> $GITHUB_ENV
+          echo "CABAL_PKGS_DIR=~/.cabal/packages" >> $GITHUB_ENV
+      - name: cache cabal
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-cabal
+        with:
+          path: |
+            ${{ env.CABAL_PKGS_DIR }}
+            ${{ env.CABAL_STORE_DIR }}
+          key: ${{ matrix.os }}-${{ matrix.ghc }}-build-${{ hashFiles('cabal.project') }}
+          restore-keys: |
+            ${{ matrix.os }}-${{ matrix.ghc }}-bench-${{ hashFiles('cabal.project') }}
+            ${{ matrix.os }}-${{ matrix.ghc }}-build-
+            ${{ matrix.os }}-${{ matrix.ghc }}
+      - name: cabal update
+        run: |
+          cabal update
+      - name: install dependencies
+        run: |
+          cabal build --disable-tests --dependencies-only -j2 all
+      - name: build w/o tests
+        run: |
+          cabal build --disable-tests all --write-ghc-environment-files=always
+      - name: cabal check
+        run: |
+          cabal -vnormal check

@@ -26,7 +26,6 @@ jobs:
         run: |
           echo "CABAL_STORE_DIR=~/.cabal/store" >> $GITHUB_ENV
           echo "CABAL_PKGS_DIR=~/.cabal/packages" >> $GITHUB_ENV
-          echo "CABAL_BIN_DIR=~/.cabal/bin" >> $GITHUB_ENV
      -  name: cache cabal
         uses: actions/cache@v2
         env:

@@ -31,21 +31,26 @@ jobs:
             compilerVersion: 9.0.1
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-8.10.6
+          - compiler: ghc-8.10.4
             compilerKind: ghc
-            compilerVersion: 8.10.6
+            compilerVersion: 8.10.4
             setup-method: hvr-ppa
             allow-failure: false
+          - compiler: ghc-8.8.4
+            compilerKind: ghc
+            compilerVersion: 8.10.4
+            setup-method: hvr-ppa
+            allow-failure: true
           - compiler: ghc-8.6.5
             compilerKind: ghc
             compilerVersion: 8.6.5
             setup-method: hvr-ppa
-            allow-failure: false
+            allow-failure: true
           - compiler: ghc-8.4.4
             compilerKind: ghc
             compilerVersion: 8.4.4
             setup-method: hvr-ppa
-            allow-failure: false
+            allow-failure: true
       fail-fast: false
     steps:
       - name: apt
@@ -197,12 +202,12 @@ jobs:
       - name: build w/o tests
         run: |
           $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks all
-      - name: build
-        run: |
-          $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --write-ghc-environment-files=always
       - name: install tasty-discover
         run: |
           $CABAL v2-install tasty-discover -v
+      - name: build
+        run: |
+          $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --write-ghc-environment-files=always
       - name: tests
         run: |
           $CABAL v2-test $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --test-show-details=direct

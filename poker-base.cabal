@@ -1,12 +1,12 @@
 cabal-version: 1.22
 
-name:           poker
+name:           poker-base
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/santiweight/poker#readme>
+description:    Please see the README on GitHub at <https://github.com/santiweight/poker-base#readme>
 category:       Poker
 synopsis:       A library for core poker types
-homepage:       https://github.com/santiweight/poker#readme
-bug-reports:    https://github.com/santiweight/poker/issues
+homepage:       https://github.com/santiweight/poker-base#readme
+bug-reports:    https://github.com/santiweight/poker-base/issues
 author:         Santiago Weight
 maintainer:     santiago.weight@gmail.com
 copyright:      2021 Santiago Weight
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/santiweight/poker
+  location: https://github.com/santiweight/poker-base
 
 library
   exposed-modules:
@@ -93,7 +93,7 @@ test-suite all-tests
     extra,
     hspec,
     megaparsec,
-    poker,
+    poker-base,
     prettyprinter,
     safe-money,
     tasty,

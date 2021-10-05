@@ -3,14 +3,14 @@
 -- TODO fix exports
 module Poker.Game where
 
-import           Data.List                      ( sort )
-import           Poker.Cards
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
 #else
 import Data.Text.Prettyprint.Doc
 #endif
 import Data.Data
+import Data.List (sort)
+import Poker.Cards
 import Poker.Utils (enumerate)
 
 -- | A player's position in a game of poker.
@@ -47,22 +47,24 @@ sortPreflop = fmap toEnum . sort . fmap fromEnum
 -- >>> sortPostflop $ [UTG]
 -- [UTG]
 sortPostflop :: [Position] -> [Position]
-sortPostflop = fmap (toEnum . fromPostFlopOrder) . sort . fmap
-  (toPostFlopOrder . fromEnum)
- where
-  fromPostFlopOrder = flip mod numPositions . (+ (numPositions - 2))
-  toPostFlopOrder   = flip mod numPositions . (+ 2)
-  numPositions = fromEnum (maxBound @Position) - fromEnum (minBound @Position) + 1
+sortPostflop =
+  fmap (toEnum . fromPostFlopOrder) . sort
+    . fmap
+      (toPostFlopOrder . fromEnum)
+  where
+    fromPostFlopOrder = flip mod numPositions . (+ (numPositions - 2))
+    toPostFlopOrder = flip mod numPositions . (+ 2)
+    numPositions = fromEnum (maxBound @Position) - fromEnum (minBound @Position) + 1
 
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)
 
-newtype Seat = Seat { _unSeat :: Int } deriving (Read, Show, Eq, Ord, Num)
+newtype Seat = Seat {_unSeat :: Int} deriving (Read, Show, Eq, Ord, Num)
 
-newtype Pot b = Pot { _unPot :: b }
+newtype Pot b = Pot {_unPot :: b}
   deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup, Monoid)
 
-newtype Stack b = Stack { _unStack :: b }
+newtype Stack b = Stack {_unStack :: b}
   deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup)
 
 data Board where
@@ -76,7 +78,7 @@ data Board where
 instance Pretty Board where
   pretty = viaShow
 
-newtype Stake b = Stake { unStake :: b }
+newtype Stake b = Stake {unStake :: b}
   deriving (Read, Show, Eq, Functor, Ord, Pretty)
 
 data BetAction t
@@ -85,14 +87,14 @@ data BetAction t
       { raiseBy :: !t, -- TODO remove?
         raiseTo :: !t
       }
-  -- TODO remove AllInRaise
-  | AllInRaise
+  | -- TODO remove AllInRaise
+    AllInRaise
       { amountRaisedAI :: !t, -- TODO remove?
         raisedAITo :: !t
       }
   | Bet !t
-  -- TODO remove AllIn
-  | AllIn !t
+  | -- TODO remove AllIn
+    AllIn !t
   | Fold
   | Check
   deriving (Read, Show, Eq, Ord, Functor, Data, Typeable)

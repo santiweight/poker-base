@@ -22,6 +22,11 @@ import           Data.Text.Prettyprint.Doc      ( (<+>)
 #endif
 import Poker.Cards
 
+-- $setup
+-- >>> :set -XTypeApplications
+-- >>> import Poker
+-- >>> import Poker.Range
+
 -- | A frequency is an unevaluated ratio that indicates how often a decision was
 -- made. For example, the value Freq (12, 34) indicates that out of the 34
 -- people who faced this decision, 12 chose to make this decision.
@@ -40,11 +45,10 @@ instance Semigroup Freq where
 -- >>> mempty @(Range Hand Freq)
 -- Range {_range = fromList []}
 -- >>> import qualified Data.Text as T
--- >>> import Poker.ParsePretty (unsafeParsePretty)
--- >>> let left = fromList [(unsafeParsePretty @ShapedHand $ T.pack "55p", Freq (1, 3))]
--- >>> let right = fromList [(unsafeParsePretty $ T.pack"55p", Freq (10, 32))]
+-- >>> let left = fromList [(unsafeParsePretty @ShapedHand $ T.pack "55p", Freq 1 3)]
+-- >>> let right = fromList [(unsafeParsePretty $ T.pack"55p", Freq 10 32)]
 -- >>> left <> right
--- Range {_range = fromList [(Pair Five,Freq (11,35))]}
+-- Range {_range = fromList [(MkPair Five,Freq 11 35)]}
 newtype Range a b
   = Range
       {_range :: Map a b}

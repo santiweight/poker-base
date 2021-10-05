@@ -4,6 +4,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         ghc: ['8.10.7', '9.0.1']
         cabal: ['3.4.0.0']
@@ -51,6 +52,3 @@ jobs:
       - name: cabal check
         run: |
           cabal -vnormal check
-      - name: haddock
-        run: |
-          cabal haddock --with-haddock all

@@ -9,3 +9,4 @@
 .DS_Store
 dist-newstyle
 TAGS
+/cabal.project.local*

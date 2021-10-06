@@ -46,3 +46,7 @@ I have a bunch of work that I've worked on on-and-off for a while now and I figu
  - UI-based DSLs and Haskell DSLs for querying poker game trees, especially against databases of online hands.
  - probably anything poker-related if you get me thinking about it LOL
 
+## Contributing
+
+See [Contributing.md](Contributing.md) for guidelines.
+

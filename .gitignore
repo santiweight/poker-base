@@ -10,3 +10,4 @@
 dist-newstyle
 TAGS
 /cabal.project.local*
+/.hie/

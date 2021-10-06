@@ -16,6 +16,10 @@ import Data.Text.Prettyprint.Doc ( Pretty(pretty)
 import           Data.Text.Prettyprint.Doc.Render.Text      ( renderStrict )
 #endif
 import GHC.Stack
+#if MIN_VERSION_base(4,13,0)
+#else
+import Control.Monad.Fail (MonadFail)
+#endif
 
 terror :: HasCallStack => Text -> a
 terror = error . T.unpack

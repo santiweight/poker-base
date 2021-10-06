@@ -226,16 +226,16 @@ spec_shapedHandToHands = do
 spec_toUnicode :: SpecWith ()
 spec_toUnicode = do
   it "encode Suit" $
-    toUnicode
+    suitToUnicode
       <$> (enumerate @Suit)
       `shouldBe` "\9827\9830\9829\9824" -- TODO fix tasty-discover bug wrt unicode
   it "fromUnicode . toUnicode forms isomorphism" $
     fromJust
-      . fromUnicode
-      . toUnicode
+      . suitFromUnicode
+      . suitToUnicode
       <$> enumerate @Suit
       `shouldBe` enumerate @Suit
-  it "fromUnicode fail" $ fromUnicode 'b' `shouldBe` Nothing
+  it "fromUnicode fail" $ suitFromUnicode 'b' `shouldBe` Nothing
 
 spec_all :: SpecWith ()
 spec_all = do

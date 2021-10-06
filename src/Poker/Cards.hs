@@ -1,9 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
 
--- TODO fix exports
 module Poker.Cards
   ( Rank (..),
     allRanks,

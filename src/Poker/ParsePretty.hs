@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 module Poker.ParsePretty where
 
@@ -7,11 +8,15 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Void (Void)
 import Poker.Utils (terror)
-import Text.Megaparsec (MonadParsec, Parsec, empty, parseMaybe, (<?>))
+import Text.Megaparsec (MonadParsec, empty, parseMaybe, (<?>))
+#if MIN_VERSION_prettyprinter(1,7,0)
+import Prettyprinter (Pretty)
+#else
+import Data.Text.Prettyprint.Doc
+#endif
 
-type PrettyParser a = Parsec Void Text a
-
-class ParsePretty a where
+-- | A class for parsing the output of the 'Pretty' instance for @a@.
+class Pretty a => ParsePretty a where
   parsePrettyP :: Ord e => MonadParsec e Text m => m a
 
 tfailure :: MonadParsec e Text m => Text -> m a

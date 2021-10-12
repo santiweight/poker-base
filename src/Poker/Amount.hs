@@ -114,7 +114,6 @@ class (Monoid b, Show b, Ord b) => IsBet b where
   smallestAmount :: b
   minus :: b -> b -> Maybe b
   add :: b -> b -> b
-  default add :: Monoid b => b -> b -> b
   add = (<>)
 
 -- TODO There's probably some way to avoid repeating the Constraints in the typeclasses,

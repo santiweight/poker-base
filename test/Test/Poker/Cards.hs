@@ -24,6 +24,25 @@ import qualified Data.Text as T
 import Poker
 import Test.Hspec
 import Test.Tasty.QuickCheck
+import Data.Functor
+
+spec_rankToChr :: SpecWith ()
+spec_rankToChr = do
+  it "rankToChr" $ (allRanks <&> rankToChr) `shouldBe` "23456789TJQKA"
+
+spec_chrToRank :: SpecWith ()
+spec_chrToRank = do
+  it "chrToRank <$> \"23456789TJQKA\"" $ (fromJust . chrToRank <$> "23456789TJQKA") `shouldBe` allRanks
+  it "chrToRank '1' == Nothing" $ chrToRank '1' `shouldBe` Nothing
+
+spec_suitToChr :: SpecWith ()
+spec_suitToChr = do
+  it "suitToChr" $ (allSuits <&> suitToChr) `shouldBe` "cdhs"
+
+spec_chrToSuit :: SpecWith ()
+spec_chrToSuit = do
+  it "chrToSuit <$> \"cdhs\"" $ (fromJust . chrToSuit <$> "cdhs") `shouldBe` allSuits
+  it "chrToSuit '1' == Nothing" $ chrToSuit '1' `shouldBe` Nothing
 
 spec_CardPrettyAndParse :: SpecWith ()
 spec_CardPrettyAndParse = do

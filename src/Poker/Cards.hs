@@ -32,10 +32,14 @@ module Poker.Cards
     freshDeck,
     unsafeMkDeck,
     shapedHandToHands,
+    rankToChr,
+    chrToRank,
+    suitToChr,
+    chrToSuit,
   )
 where
 
-import Control.Applicative (Applicative (liftA2))
+import Control.Applicative (Alternative (empty), Applicative (liftA2))
 import Control.Monad (liftM2)
 import qualified Data.IntMap.Strict
 import qualified Data.Map.Strict
@@ -47,7 +51,7 @@ import Data.String (IsString)
 import qualified Data.Text as T
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
-import Prettyprinter.Internal ( unsafeTextWithoutNewlines )
+import Prettyprinter.Internal ( unsafeTextWithoutNewlines, Doc(Char) )
 #else
 import           Data.Text.Prettyprint.Doc.Internal
 #endif
@@ -88,68 +92,92 @@ data Rank
   deriving (Enum, Bounded, Eq, Ord, Show, Read)
 
 instance Pretty Rank where
-  pretty r = unsafeTextWithoutNewlines $ case r of
-    Two -> "2"
-    Three -> "3"
-    Four -> "4"
-    Five -> "5"
-    Six -> "6"
-    Seven -> "7"
-    Eight -> "8"
-    Nine -> "9"
-    Ten -> "T"
-    Jack -> "J"
-    Queen -> "Q"
-    King -> "K"
-    Ace -> "A"
+  pretty = unsafeTextWithoutNewlines . T.singleton . rankToChr
 
 instance ParsePretty Rank where
-  parsePrettyP = anySingle >>= chrToRank <?> "Rank"
-    where
-      chrToRank = \case
-        '2' -> pure Two
-        '3' -> pure Three
-        '4' -> pure Four
-        '5' -> pure Five
-        '6' -> pure Six
-        '7' -> pure Seven
-        '8' -> pure Eight
-        '9' -> pure Nine
-        'T' -> pure Ten
-        'J' -> pure Jack
-        'Q' -> pure Queen
-        'K' -> pure King
-        'A' -> pure Ace
-        chr -> tfailure $ "Unknown Rank: " <> prettyText chr
+  parsePrettyP = anySingle >>= (maybe empty pure . chrToRank) <?> "Rank"
 
 -- | >>> allRanks
 -- [Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King,Ace]
 allRanks :: [Rank]
 allRanks = enumerate @Rank
 
+-- | >>> rankToChr <$> allRanks
+-- "23456789TJQKA"
+rankToChr :: Rank -> Char
+rankToChr = \case
+  Two -> '2'
+  Three -> '3'
+  Four -> '4'
+  Five -> '5'
+  Six -> '6'
+  Seven -> '7'
+  Eight -> '8'
+  Nine -> '9'
+  Ten -> 'T'
+  Jack -> 'J'
+  Queen -> 'Q'
+  King -> 'K'
+  Ace -> 'A'
+
+-- | >>> map (fromJust . chrToRank) "23456789TJQKA"
+-- [Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King,Ace]
+-- >>> chrToRank 'f'
+-- Nothing
+-- prop> chrToRank (rankToChr r) == Just r
+chrToRank :: Char -> Maybe Rank
+chrToRank = \case
+  '2' -> pure Two
+  '3' -> pure Three
+  '4' -> pure Four
+  '5' -> pure Five
+  '6' -> pure Six
+  '7' -> pure Seven
+  '8' -> pure Eight
+  '9' -> pure Nine
+  'T' -> pure Ten
+  'J' -> pure Jack
+  'Q' -> pure Queen
+  'K' -> pure King
+  'A' -> pure Ace
+  _ -> Nothing
+
 -- | The 'Suit' of a playing 'Card'
 data Suit = Club | Diamond | Heart | Spade
   deriving (Enum, Bounded, Eq, Ord, Show, Read)
 
 instance Pretty Suit where
-  pretty Club = "c"
-  pretty Diamond = "d"
-  pretty Heart = "h"
-  pretty Spade = "s"
+  pretty = Char . suitToChr
 
 instance ParsePretty Suit where
-  parsePrettyP = anySingle >>= chrToSuit <?> "Suit"
-    where
-      chrToSuit chr =
-        maybe (tfailure $ "Unexpected Suit: " <> prettyText chr) pure
-          . Data.Map.Strict.lookup chr
-          . Data.Map.Strict.fromList
-          $ [('c', Club), ('d', Diamond), ('h', Heart), ('s', Spade)]
+  parsePrettyP = anySingle >>= (maybe empty pure . chrToSuit) <?> "Suit"
 
 -- | >>> allSuits
 -- [Club,Diamond,Heart,Spade]
 allSuits :: [Suit]
 allSuits = enumerate @Suit
+
+-- | >>> suitToChr <$> allSuits
+-- "cdhs"
+suitToChr :: Suit -> Char
+suitToChr = \case
+  Club -> 'c'
+  Diamond -> 'd'
+  Heart -> 'h'
+  Spade -> 's'
+
+-- | >>> map (fromJust . chrToSuit) "cdhs"
+-- [Club,Diamond,Heart,Spade]
+-- >>> chrToSuit '1'
+-- Nothing
+-- prop> chrToSuit (suitToChr s) == Just s
+chrToSuit :: Char -> Maybe Suit
+chrToSuit = \case
+  'c' -> pure Club
+  'd' -> pure Diamond
+  'h' -> pure Heart
+  's' -> pure Spade
+  _ -> Nothing
 
 -- | >>> suitToUnicode <$> [Club, Diamond, Heart, Spade]
 -- "\9827\9830\9829\9824"

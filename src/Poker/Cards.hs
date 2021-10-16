@@ -14,7 +14,6 @@ module Poker.Cards
     Hand (..),
     pattern Hand,
     mkHand,
-    unsafeMkHand,
     allHands,
     ShapedHand (..),
     pattern Offsuit,
@@ -27,7 +26,7 @@ module Poker.Cards
     unsafeMkOffsuit,
     listShapedHands,
     handToShaped,
-    Deck,
+    Deck (..),
     pattern Deck,
     freshDeck,
     unsafeMkDeck,
@@ -36,38 +35,30 @@ module Poker.Cards
     chrToRank,
     suitToChr,
     chrToSuit,
+    cardToShortTxt,
+    cardFromShortTxt,
   )
 where
 
 import Control.Applicative (Alternative (empty), Applicative (liftA2))
 import Control.Monad (liftM2)
-import qualified Data.IntMap.Strict
-import qualified Data.Map.Strict
-import Data.Maybe
-  ( fromJust,
-    fromMaybe,
-  )
-import Data.String (IsString)
-import qualified Data.Text as T
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
 import Prettyprinter.Internal ( unsafeTextWithoutNewlines, Doc(Char) )
 #else
 import           Data.Text.Prettyprint.Doc.Internal
 #endif
-import GHC.Exts (IsString (fromString))
+
+import Data.Bifunctor (Bifunctor (second))
+import qualified Data.IntMap.Strict
+import qualified Data.Map.Strict
+import Data.Maybe
+import Data.String (IsString (fromString))
+import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import Poker.ParsePretty
-  ( ParsePretty (parsePrettyP),
-    parsePretty,
-    tfailure,
-  )
 import Poker.Utils
-  ( atMay,
-    enumerate,
-    prettyText,
-    terror,
-  )
 import Text.Megaparsec
   ( MonadParsec (label),
     anySingle,
@@ -222,12 +213,23 @@ instance Bounded Card where
   minBound = toEnum 0
   maxBound = toEnum 51
 
+instance IsString Card where
+  fromString = fromJust . cardFromShortTxt . T.pack
+
 -- | All cards in deck
 allCards :: [Card]
 allCards = liftM2 Card allRanks allSuits
 
+cardToShortTxt :: Card -> Text
+cardToShortTxt (Card r s) = T.pack [rankToChr r, suitToChr s]
+
+cardFromShortTxt :: Text -> Maybe Card
+cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
+  Just (r, Just (s, T.null -> True)) -> Card <$> chrToRank r <*> chrToSuit s
+  _ -> Nothing
+
 -- | 'Hand' represents a player's hole cards in a game of Texas Hold\'Em
-data Hand = MkHand !Card !Card
+data Hand = UnsafeMkHand !Card !Card
   deriving (Eq, Ord, Show)
 
 -- TODO tests
@@ -237,7 +239,7 @@ instance IsString Hand where
 {-# COMPLETE Hand #-}
 
 pattern Hand :: Card -> Card -> Hand
-pattern Hand c1 c2 <- MkHand c1 c2
+pattern Hand c1 c2 <- UnsafeMkHand c1 c2
 
 -- | Returns a 'Hand' if the incoming 'Card's are unique, else 'Nothing'.
 -- Note that the internal representation of 'Hand' is normalised:
@@ -246,16 +248,8 @@ pattern Hand c1 c2 <- MkHand c1 c2
 mkHand :: Card -> Card -> Maybe Hand
 mkHand c1 c2 =
   if c1 /= c2
-    then Just $ if c2 > c1 then MkHand c1 c2 else MkHand c2 c1
+    then Just $ if c1 <= c2 then UnsafeMkHand c1 c2 else UnsafeMkHand c2 c1
     else Nothing
-
--- | Unsafely creates a new 'Hand'. The two input 'Card's are expected to be
--- unique, and the first 'Card' should be less than the second 'Card' (as defined by
--- 'Ord'). See 'mkHand' for a safe way to create 'Hand's.
-unsafeMkHand :: Card -> Card -> Hand
-unsafeMkHand c1 c2 =
-  fromMaybe (terror $ "Cannot form a Hand from " <> prettyText (c1, c2)) $
-    mkHand c1 c2
 
 -- | All possible Hold'Em poker 'Hand's
 --
@@ -268,7 +262,7 @@ allHands = reverse $ do
     if r1 == r2
       then [(s1, s2) | s1 <- enumerate, s2 <- drop 1 (enumFrom s1)]
       else liftM2 (,) enumerate enumerate
-  pure $ unsafeMkHand (Card r1 s1) (Card r2 s2)
+  pure $ UnsafeMkHand (Card r1 s1) (Card r2 s2)
 
 instance Enum Hand where
   toEnum num =
@@ -340,9 +334,10 @@ mkPair :: Rank -> ShapedHand
 mkPair = MkPair
 
 mkSuited :: Rank -> Rank -> Maybe ShapedHand
-mkSuited r1 r2
-  | r1 /= r2 = Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
-  | otherwise = Nothing
+mkSuited r1 r2 =
+  if r1 /= r2
+    then Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
+    else Nothing
 
 unsafeMkSuited :: Rank -> Rank -> ShapedHand
 unsafeMkSuited r1 r2 =
@@ -350,9 +345,10 @@ unsafeMkSuited r1 r2 =
     mkSuited r1 r2
 
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHand
-mkOffsuit r1 r2
-  | r1 /= r2 = Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
-  | otherwise = Nothing
+mkOffsuit r1 r2 =
+  if r1 /= r2
+    then Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
+    else Nothing
 
 unsafeMkOffsuit :: HasCallStack => Rank -> Rank -> ShapedHand
 unsafeMkOffsuit r1 r2 =
@@ -361,8 +357,8 @@ unsafeMkOffsuit r1 r2 =
 
 listShapedHands :: [ShapedHand]
 listShapedHands = reverse $ do
-  rank1 <- enumerate
-  rank2 <- enumerate
+  rank1 <- allRanks
+  rank2 <- allRanks
   return $ case compare rank1 rank2 of
     GT -> unsafeMkSuited rank1 rank2
     EQ -> mkPair rank1
@@ -378,16 +374,16 @@ listShapedHands = reverse $ do
 shapedHandToHands :: ShapedHand -> [Hand]
 shapedHandToHands = \case
   Pair r -> do
-    s1 <- enumerate
-    s2 <- drop (fromEnum s1 + 1) enumerate
-    pure $ unsafeMkHand (Card r s1) (Card r s2)
+    s1 <- allSuits
+    s2 <- drop (fromEnum s1 + 1) allSuits
+    pure . fromJust $ mkHand (Card r s1) (Card r s2)
   Offsuit r1 r2 -> do
     s1 <- enumerate
     s2 <- filter (s1 /=) enumerate
-    pure $ unsafeMkHand (Card r1 s1) (Card r2 s2)
+    pure . fromJust $ mkHand (Card r1 s1) (Card r2 s2)
   Suited r1 r2 -> do
     s <- enumerate
-    pure $ unsafeMkHand (Card r1 s) (Card r2 s)
+    pure . fromJust$ mkHand (Card r1 s) (Card r2 s)
 
 -- TODO needs tests
 handToShaped :: Hand -> ShapedHand

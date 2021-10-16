@@ -27,10 +27,23 @@ instance Pretty Position where
 newtype NumPlayers = NumPlayers Word8
   deriving (Num, Enum, Eq, Ord, Real, Integral)
 
-unsafeMkNumPlayers :: (Integral a, Show a) => a -> NumPlayers
-unsafeMkNumPlayers num | num >= 2 && num <= 9 = NumPlayers $ fromIntegral num
-unsafeMkNumPlayers num = error $ "Tables of size " <> show num <> " are not yet supported"
+players2, players3, players4, players5, players6, players7, players8, players9 :: NumPlayers
+players2 = NumPlayers 2
+players3 = NumPlayers 3
+players4 = NumPlayers 4
+players5 = NumPlayers 5
+players6 = NumPlayers 6
+players7 = NumPlayers 7
+players8 = NumPlayers 8
+players9 = NumPlayers 9
 
+mkNumPlayers :: Integral a => a -> Maybe NumPlayers
+mkNumPlayers num | num >= 2 && num <= 9 = Just $ NumPlayers $ fromIntegral num
+mkNumPlayers _ = Nothing
+
+-- | 'Position's are ordered by table order. The first position in the list
+-- is the first player to act preflop. The last position in the list is always
+-- the big blind.
 -- >>> allPositions 6
 -- [Position 1,Position 2,Position 3,Position 4,Position 5,Position 6]
 allPositions :: NumPlayers -> [Position]
@@ -46,8 +59,8 @@ allPositions (NumPlayers num) = Position <$> [1 .. num]
 --
 -- TODO Pre-compute, via TH, Position -> Text maps for each NumPlayers, to avoid
 -- extra runtime cost
-unsafePositionToText :: NumPlayers -> Position -> Text
-unsafePositionToText (NumPlayers num) (Position pos) =
+positionToTxt :: NumPlayers -> Position -> Text
+positionToTxt (NumPlayers num) (Position pos) =
   let allPositionTexts = ["UTG", "UTG1", "UTG2", "LJ", "HJ", "CO", "BU", "SB", "BB"]
       positionTexts = case num of
         2 -> ["BU", "BB"]
@@ -64,18 +77,21 @@ unsafePositionToText (NumPlayers num) (Position pos) =
 getPreflopOrder :: NumPlayers -> [Position]
 getPreflopOrder = allPositions
 
--- >>> unsafePositionToText 2 $ buttonPosition 2
--- "BU"
--- >>> unsafePositionToText 3 $ buttonPosition 3
--- "BU"
--- >>> unsafePositionToText 6 $ buttonPosition 6
--- "BU"
--- >>> unsafePositionToText 9 $ buttonPosition 9
--- "BU"
+-- >>> buttonPosition 2
+-- Position 1
+-- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> [2..9]
+-- ["BU","BU","BU","BU","BU","BU","BU","BU"]
 buttonPosition :: NumPlayers -> Position
 buttonPosition (NumPlayers wo) = case wo of
   2 -> Position 1
   _ -> Position (wo - 2)
+
+-- >>> bigBlindPosition 2
+-- Position 2
+-- >>> (\numPlayers -> positionToTxt numPlayers $ bigBlindPosition numPlayers) <$> [2..9]
+-- ["BB","BB","BB","BB","BB","BB","BB","BB"]
+bigBlindPosition :: NumPlayers -> Position
+bigBlindPosition (NumPlayers wo) = Position wo
 
 -- >>> unsafePositionToText 2 <$> getPostFlopOrder 2
 -- ["BB","BU"]

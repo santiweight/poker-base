@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Test.Poker.Game where
 
 import Data.List.Extra (enumerate)
@@ -11,42 +13,9 @@ import Test.QuickCheck
     sublistOf,
   )
 
-prop_sortPreflop :: Gen Bool
-prop_sortPreflop = do
-  somePositions <- sublistOf $ enumerate @Position
-  shuffledPositions <- shuffle somePositions
-  pure $ sortPreflop shuffledPositions == somePositions
-
-prop_sortPostflop :: Property
-prop_sortPostflop = do
-  forAll (sublistOf postFlopPositions) $ \positions ->
-    forAll (shuffle positions) $ \shuffledPositions -> do
-      sortPostflop shuffledPositions == positions
-  where
-    postFlopPositions = [SB, BB, UTG, UTG1, UTG2, UTG3, UTG4, UTG5, BU]
-
-spec_sortPositions :: SpecWith ()
-spec_sortPositions = do
-  describe "sortPreflop" $ do
-    preflopCase "empty list" [] []
-    preflopCase "all positions" allPos allPos
-    preflopCase
-      "shuffled positions"
-      [BU, UTG, BB, UTG1, SB, UTG2]
-      [UTG, UTG1, UTG2, BU, SB, BB]
-    preflopCase "shuffled positions sublist" [BB, UTG, BU] [UTG, BU, BB]
-  describe "sortPostflop" $ do
-    postflopCase "empty list" [] []
-    postflopCase "all positions" allPos allPosPostflop
-    postflopCase
-      "shuffled positions"
-      [BU, UTG, BB, UTG1, SB, UTG2, UTG4, UTG3, UTG5]
-      allPosPostflop
-    postflopCase "shuffled positions sublist" [BB, UTG, BU] [BB, UTG, BU]
-  where
-    allPos = enumerate @Position
-    allPosPostflop = [SB, BB, UTG, UTG1, UTG2, UTG3, UTG4, UTG5, BU]
-    preflopCase = mkCase sortPreflop
-    postflopCase = mkCase sortPostflop
-    mkCase sorter name input expected =
-      it name $ sorter input `shouldBe` expected
+spec_allPositions :: SpecWith ()
+spec_allPositions = do
+  it "heads up all positions" $ (positionToTxt players2 <$> allPositions players2) `shouldBe` ["BU", "BB"]
+  it "3max all positions" $ (positionToTxt players3 <$> allPositions players3) `shouldBe` ["BU", "SB", "BB"]
+  it "4max all positions" $ (positionToTxt players4 <$> allPositions players4) `shouldBe` ["CO", "BU", "SB", "BB"]
+  it "9max all positions" $ (positionToTxt players9 <$> allPositions players9) `shouldBe` ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]

@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Poker.Cards
   ( Rank (..),
@@ -11,12 +10,12 @@ module Poker.Cards
     suitFromUnicode,
     Card (..),
     allCards,
-    Hand (..),
-    pattern Hand,
-    mkHand,
-    unsafeMkHand,
-    allHands,
-    ShapedHand (..),
+    Hole (..),
+    pattern Hole,
+    mkHole,
+    unsafeMkHole,
+    allHoles,
+    ShapedHole (..),
     pattern Offsuit,
     pattern Pair,
     pattern Suited,
@@ -25,13 +24,13 @@ module Poker.Cards
     mkSuited,
     unsafeMkSuited,
     unsafeMkOffsuit,
-    listShapedHands,
-    handToShaped,
+    listShapedHoles,
+    holeToShaped,
     Deck,
     pattern Deck,
     freshDeck,
     unsafeMkDeck,
-    shapedHandToHands,
+    shapedHoleToHoles,
   )
 where
 
@@ -198,83 +197,83 @@ instance Bounded Card where
 allCards :: [Card]
 allCards = liftM2 Card allRanks allSuits
 
--- | 'Hand' represents a player's hole cards in a game of Texas Hold\'Em
-data Hand = MkHand !Card !Card
+-- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
+data Hole = MkHole !Card !Card
   deriving (Eq, Ord, Show)
 
 -- TODO tests
-instance IsString Hand where
+instance IsString Hole where
   fromString = fromJust . parsePretty . T.pack
 
-{-# COMPLETE Hand #-}
+{-# COMPLETE Hole #-}
 
-pattern Hand :: Card -> Card -> Hand
-pattern Hand c1 c2 <- MkHand c1 c2
+pattern Hole :: Card -> Card -> Hole
+pattern Hole c1 c2 <- MkHole c1 c2
 
--- | Returns a 'Hand' if the incoming 'Card's are unique, else 'Nothing'.
--- Note that the internal representation of 'Hand' is normalised:
+-- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
+-- Note that the internal representation of 'Hole' is normalised:
 --
 -- prop> mkHand c1 c2 == mkHand c2 c1
-mkHand :: Card -> Card -> Maybe Hand
-mkHand c1 c2
-  | c1 /= c2 = Just $ if c2 > c1 then MkHand c2 c1 else MkHand c1 c2
+mkHole :: Card -> Card -> Maybe Hole
+mkHole c1 c2
+  | c1 /= c2 = Just $ if c2 > c1 then MkHole c2 c1 else MkHole c1 c2
   | otherwise = Nothing
 
--- | Unsafely creates a new 'Hand'. The two input 'Card's are expected to be
+-- | Unsafely creates a new 'Hole'. The two input 'Card's are expected to be
 -- unique, and the first 'Card' should be less than the second 'Card' (as defined by
--- 'Ord'). See 'mkHand' for a safe way to create 'Hand's.
-unsafeMkHand :: Card -> Card -> Hand
-unsafeMkHand c1 c2 =
-  fromMaybe (terror $ "Cannot form a Hand from " <> prettyText (c1, c2)) $
-    mkHand c1 c2
+-- 'Ord'). See 'mkHole' for a safe way to create 'Hole's.
+unsafeMkHole :: Card -> Card -> Hole
+unsafeMkHole c1 c2 =
+  fromMaybe (terror $ "Cannot form a Hole from " <> prettyText (c1, c2)) $
+    mkHole c1 c2
 
--- | All possible Hold'Em poker 'Hand's
+-- | All possible Hold'Em poker 'Hole's
 --
 -- TODO add tests
-allHands :: [Hand]
-allHands = reverse $ do
+allHoles :: [Hole]
+allHoles = reverse $ do
   r1 <- enumerate
   r2 <- enumFrom r1
   (s1, s2) <-
     if r1 == r2
       then [(s1, s2) | s1 <- enumerate, s2 <- drop 1 (enumFrom s1)]
       else liftM2 (,) enumerate enumerate
-  pure $ unsafeMkHand (Card r1 s1) (Card r2 s2)
+  pure $ unsafeMkHole (Card r1 s1) (Card r2 s2)
 
-instance Enum Hand where
+instance Enum Hole where
   toEnum num =
-    fromMaybe (error $ "Invalid Hand enum: " <> show num)
+    fromMaybe (error $ "Invalid Hole enum: " <> show num)
       . flip
         Data.IntMap.Strict.lookup
-        (Data.IntMap.Strict.fromList $ zip [1 ..] allHands)
+        (Data.IntMap.Strict.fromList $ zip [1 ..] allHoles)
       $ num
   fromEnum =
     fromJust
       . flip
         Data.Map.Strict.lookup
-        (Data.Map.Strict.fromList $ zip allHands [1 ..])
+        (Data.Map.Strict.fromList $ zip allHoles [1 ..])
 
-instance Bounded Hand where
-  minBound = head allHands
-  maxBound = last allHands
+instance Bounded Hole where
+  minBound = head allHoles
+  maxBound = last allHoles
 
--- >>> pretty $ Hand (Card Ace Heart) (Card King Spade)
+-- >>> pretty $ Hole (Card Ace Heart) (Card King Spade)
 -- AhKs
-instance Pretty Hand where
-  pretty (Hand c1 c2) = pretty c1 <> pretty c2
+instance Pretty Hole where
+  pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
--- >>> parsePretty @Hand "AhKs"
--- Just (Hand (Card {rank = Ace, suit = Heart}) (Card {rank = King, suit = Spade}))
-instance ParsePretty Hand where
-  parsePrettyP = label "Hand" $ do
+-- >>> parsePretty @Hole "AhKs"
+-- Just (Hole (Card {rank = Ace, suit = Heart}) (Card {rank = King, suit = Spade}))
+instance ParsePretty Hole where
+  parsePrettyP = label "Hole" $ do
     c1 <- parsePrettyP
     c2 <- parsePrettyP
     maybe (tfailure $ "Invalid card: " <> prettyText (c1, c2)) pure $
-      mkHand c1 c2
+      mkHole c1 c2
 
 -- |
--- A 'ShapedHand' is the 'Suit'-normalised representation of a
--- poker 'Hand'. For example, the 'Hand' "King of Diamonds, 5 of Hearts" is often referred
+-- A 'ShapedHole' is the 'Suit'-normalised representation of a
+-- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
 -- to as "King-5 offsuit".
 --
 -- >>> pretty $ mkPair Two
@@ -285,53 +284,53 @@ instance ParsePretty Hand where
 -- suited : 24s
 --
 -- >>> import Poker.ParsePretty
--- >>> parsePretty @ShapedHand "22p"
+-- >>> parsePretty @ShapedHole "22p"
 -- Just (MkPair Two)
--- >>> parsePretty @ShapedHand "24o"
+-- >>> parsePretty @ShapedHole "24o"
 -- Just (MkOffsuit Four Two)
--- >>> parsePretty @ShapedHand "24s"
+-- >>> parsePretty @ShapedHole "24s"
 -- Just (MkSuited Four Two)
 --
 -- TODO Make patterns uni-directional (don't expose constructors)
-data ShapedHand = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
+data ShapedHole = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
   deriving (Eq, Ord, Show, Read)
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 
-pattern Pair :: Rank -> ShapedHand
+pattern Pair :: Rank -> ShapedHole
 pattern Pair r <- MkPair r
 
-pattern Offsuit :: Rank -> Rank -> ShapedHand
+pattern Offsuit :: Rank -> Rank -> ShapedHole
 pattern Offsuit r1 r2 <- MkOffsuit r1 r2
 
-pattern Suited :: Rank -> Rank -> ShapedHand
+pattern Suited :: Rank -> Rank -> ShapedHole
 pattern Suited r1 r2 <- MkSuited r1 r2
 
-mkPair :: Rank -> ShapedHand
+mkPair :: Rank -> ShapedHole
 mkPair = MkPair
 
-mkSuited :: Rank -> Rank -> Maybe ShapedHand
+mkSuited :: Rank -> Rank -> Maybe ShapedHole
 mkSuited r1 r2
   | r1 /= r2 = Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
   | otherwise = Nothing
 
-unsafeMkSuited :: Rank -> Rank -> ShapedHand
+unsafeMkSuited :: Rank -> Rank -> ShapedHole
 unsafeMkSuited r1 r2 =
   fromMaybe (terror $ "Invalid Suited hand: " <> prettyText (r1, r2)) $
     mkSuited r1 r2
 
-mkOffsuit :: Rank -> Rank -> Maybe ShapedHand
+mkOffsuit :: Rank -> Rank -> Maybe ShapedHole
 mkOffsuit r1 r2
   | r1 /= r2 = Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
   | otherwise = Nothing
 
-unsafeMkOffsuit :: HasCallStack => Rank -> Rank -> ShapedHand
+unsafeMkOffsuit :: HasCallStack => Rank -> Rank -> ShapedHole
 unsafeMkOffsuit r1 r2 =
   fromMaybe (terror $ "Cannot form offsuit hand from: " <> prettyText (r1, r2)) $
     mkOffsuit r1 r2
 
-listShapedHands :: [ShapedHand]
-listShapedHands = reverse $ do
+listShapedHoles :: [ShapedHole]
+listShapedHoles = reverse $ do
   rank1 <- enumerate
   rank2 <- enumerate
   return $ case compare rank1 rank2 of
@@ -340,57 +339,57 @@ listShapedHands = reverse $ do
     LT -> unsafeMkOffsuit rank1 rank2
 
 -- | >>> import Poker.ParsePretty
--- >>> pretty . shapedHandToHands $ unsafeParsePretty "55p"
+-- >>> pretty . shapedHoleToHoles $ unsafeParsePretty "55p"
 -- [5d5c, 5h5c, 5s5c, 5h5d, 5s5d, 5s5h]
--- >>> pretty . shapedHandToHands $ unsafeParsePretty "97o"
+-- >>> pretty . shapedHoleToHoles $ unsafeParsePretty "97o"
 -- [9c7d, 9c7h, 9c7s, 9d7c, 9d7h, 9d7s, 9h7c, 9h7d, 9h7s, 9s7c, 9s7d, 9s7h]
--- >>> pretty . shapedHandToHands $ unsafeParsePretty "QTs"
+-- >>> pretty . shapedHoleToHoles $ unsafeParsePretty "QTs"
 -- [QcTc, QdTd, QhTh, QsTs]
-shapedHandToHands :: ShapedHand -> [Hand]
-shapedHandToHands = \case
+shapedHoleToHoles :: ShapedHole -> [Hole]
+shapedHoleToHoles = \case
   Pair r -> do
     s1 <- enumerate
     s2 <- drop (fromEnum s1 + 1) enumerate
-    pure $ unsafeMkHand (Card r s1) (Card r s2)
+    pure $ unsafeMkHole (Card r s1) (Card r s2)
   Offsuit r1 r2 -> do
     s1 <- enumerate
     s2 <- filter (s1 /=) enumerate
-    pure $ unsafeMkHand (Card r1 s1) (Card r2 s2)
+    pure $ unsafeMkHole (Card r1 s1) (Card r2 s2)
   Suited r1 r2 -> do
     s <- enumerate
-    pure $ unsafeMkHand (Card r1 s) (Card r2 s)
+    pure $ unsafeMkHole (Card r1 s) (Card r2 s)
 
 -- TODO needs tests
-handToShaped :: Hand -> ShapedHand
-handToShaped (Hand (Card r1 s1) (Card r2 s2))
+holeToShaped :: Hole -> ShapedHole
+holeToShaped (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1
   | s1 == s2 = unsafeMkSuited r1 r2
   | otherwise = unsafeMkOffsuit r1 r2
 
-instance Enum ShapedHand where
+instance Enum ShapedHole where
   toEnum num =
-    fromMaybe (error $ "Invalid ShapedHand enum: " <> show num)
+    fromMaybe (error $ "Invalid ShapedHole enum: " <> show num)
       . flip
         Data.IntMap.Strict.lookup
-        (Data.IntMap.Strict.fromList $ zip [1 ..] listShapedHands)
+        (Data.IntMap.Strict.fromList $ zip [1 ..] listShapedHoles)
       $ num
   fromEnum =
     fromJust
       . flip
         Data.Map.Strict.lookup
-        (Data.Map.Strict.fromList $ zip listShapedHands [1 ..])
+        (Data.Map.Strict.fromList $ zip listShapedHoles [1 ..])
 
-instance Bounded ShapedHand where
-  minBound = head listShapedHands
-  maxBound = last listShapedHands
+instance Bounded ShapedHole where
+  minBound = head listShapedHoles
+  maxBound = last listShapedHoles
 
-instance Pretty ShapedHand where
+instance Pretty ShapedHole where
   pretty (Offsuit r1 r2) = pretty r1 <> pretty r2 <> "o"
   pretty (Suited r1 r2) = pretty r1 <> pretty r2 <> "s"
   pretty (Pair r) = pretty r <> pretty r <> "p"
 
-instance ParsePretty ShapedHand where
-  parsePrettyP = label "ShapedHand" $ do
+instance ParsePretty ShapedHole where
+  parsePrettyP = label "ShapedHole" $ do
     r1 <- parsePrettyP @Rank
     r2 <- parsePrettyP @Rank
     let rs = (r1, r2)

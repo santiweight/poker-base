@@ -157,7 +157,7 @@ spec_mkHand = do
   let aceD = Card Ace Diamond
   it "success" $
     mkHand aceS aceD `shouldSatisfy` \case
-      Just (Hand c1 c2) | c1 == aceS, c2 == aceD -> True
+      Just (Hand c1 c2) | c1 == aceD, c2 == aceS -> True
       _ -> False
   it "fail" $ let c = Card Two Club in mkHand c c `shouldBe` Nothing
   it "order doesn't matter" $

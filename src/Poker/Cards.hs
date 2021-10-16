@@ -244,9 +244,10 @@ pattern Hand c1 c2 <- MkHand c1 c2
 --
 -- prop> mkHand c1 c2 == mkHand c2 c1
 mkHand :: Card -> Card -> Maybe Hand
-mkHand c1 c2
-  | c1 /= c2 = Just $ if c2 > c1 then MkHand c2 c1 else MkHand c1 c2
-  | otherwise = Nothing
+mkHand c1 c2 =
+  if c1 /= c2
+    then Just $ if c2 > c1 then MkHand c1 c2 else MkHand c2 c1
+    else Nothing
 
 -- | Unsafely creates a new 'Hand'. The two input 'Card's are expected to be
 -- unique, and the first 'Card' should be less than the second 'Card' (as defined by

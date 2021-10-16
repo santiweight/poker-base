@@ -15,7 +15,7 @@ As a base library, a general development goal is to keep everything neat, tidy, 
 To help with this we recommend a few external tools:
 
 - [tasty-discover](https://hackage.haskell.org/package/tasty-discover) as a runner for the [tasty](https://hackage.haskell.org/package/tasty) test framework.
-- [ormulo](https://hackage.haskell.org/package/ormolu) to automate code formatting consistency.
+- [ormolu](https://hackage.haskell.org/package/ormolu) to automate code formatting consistency.
 - [hlint](https://hackage.haskell.org/package/hlint) for code linting, and
 - [cabal-docspec](https://github.com/phadej/cabal-extras/blob/master/cabal-docspec/MANUAL.md) as a doctest runner.
 

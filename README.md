@@ -9,6 +9,15 @@ Basic datatypes for writing code that handles poker (poker simulation, a poker w
 
 Pull requests or suggestions (preferably created in an issue), are not just encouraged but highly requested! We are quick to respond to any help you might need :)
 
+## Usage
+
+```
+>>> import Poker
+>>> h = Hand [Card Ace Club, Card Two Diamond]
+>>> pretty h
+>>> Ac2d
+```
+
 ## Goal
 
 To become Haskell's core de facto library for poker applications. We are working on this library so that your poker work can use `poker-base`, and its children packages, seamlessly.

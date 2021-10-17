@@ -205,12 +205,19 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
 data Hole = MkHole !Card !Card
   deriving (Eq, Ord, Show)
 
--- TODO tests
 instance IsString Hole where
-  fromString s@[r1, s1, r2, s2] =
-    fromMaybe (error $ "Invalid Hole: " <> s) . join $
-      mkHole <$> (cardFromShortTxt . T.pack) [r1, s1] <*> (cardFromShortTxt . T.pack) [r2, s2]
-  fromString str = error $ "Invalid Hole: " <> str
+  fromString str = case str of
+    [r1, s1, r2, s2] ->
+      fromMaybe invalidHole . join $
+        mkHole <$> (cardFromShortTxt . T.pack) [r1, s1] <*> (cardFromShortTxt . T.pack) [r2, s2]
+    _ -> invalidHole
+    where
+      invalidHole = error $ "Invalid Hole: " <> str
+
+-- >>> pretty $ Hole (Card Ace Heart) (Card King Spade)
+-- AhKs
+instance Pretty Hole where
+  pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
 {-# COMPLETE Hole #-}
 
@@ -247,11 +254,6 @@ allHoles = reverse $ do
       then [(s1, s2) | s1 <- enumerate, s2 <- drop 1 (enumFrom s1)]
       else liftM2 (,) enumerate enumerate
   pure $ unsafeMkHole (Card r1 s1) (Card r2 s2)
-
--- >>> pretty $ Hole (Card Ace Heart) (Card King Spade)
--- AhKs
-instance Pretty Hole where
-  pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
 -- |
 -- A 'ShapedHole' is the 'Suit'-normalised representation of a
@@ -290,7 +292,7 @@ pattern Suited r1 r2 <- MkSuited r1 r2
 
 instance IsString ShapedHole where
   fromString str = case str of
-    [r1,r2,s] ->
+    [r1, r2, s] ->
       fromMaybe invalidShapedHole $ do
         r1' <- chrToRank r1
         r2' <- chrToRank r2

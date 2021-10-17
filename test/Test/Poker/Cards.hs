@@ -16,10 +16,9 @@ import Data.Functor
 import Data.List.Extra
 import Data.Maybe
 import Data.Text (Text)
-import qualified Data.Text as T
 import Poker
 import Test.Hspec
-import Test.Tasty.QuickCheck
+import Data.String (IsString(fromString))
 
 spec_rankToChr :: SpecWith ()
 spec_rankToChr = do
@@ -48,30 +47,6 @@ spec_cardFromShortTxt = do
   it "cardFromShortTxt \"Ac\" == Just (Card Ace Club)" $ cardFromShortTxt "Ac" `shouldBe` Just (Card Ace Club)
   it "cardFromShortTxt \"Acd\" == Nothing" $ cardFromShortTxt "Acd" `shouldBe` Nothing
   it "cardFromShortTxt \"AcAd\" == Nothing" $ cardFromShortTxt "AcAd" `shouldBe` Nothing
-
-spec_CardPrettyAndParse :: SpecWith ()
-spec_CardPrettyAndParse = do
-  describe "Check Pretty and ParsePretty form isomorphism" $
-    forM_ cardCases genTestCase
-  where
-    genTestCase (cardStr, card) = do
-      it (T.unpack $ "parsePretty " <> cardStr) $
-        parsePretty cardStr
-          `shouldBe` Just card
-
-prop_badCardParse :: Gen Property
-prop_badCardParse = do
-  cardStr <-
-    liftA2
-      (\a b -> T.pack [a, b])
-      arbitraryASCIIChar
-      arbitraryASCIIChar
-  pure $
-    cardStr `notElem` allValidCardStrs
-      ==> isNothing
-        (parsePretty @Card cardStr)
-  where
-    allValidCardStrs = fst <$> cardCases
 
 cardCases :: [(Text, Card)]
 cardCases =
@@ -128,33 +103,6 @@ cardCases =
     ("2d", Card Two Diamond),
     ("2c", Card Two Club)
   ]
-
-spec_isoPrettyParseRank :: SpecWith ()
-spec_isoPrettyParseRank = checkPrettyParseEnumIso @Rank "Rank"
-
-spec_isoPrettyParseSuit :: SpecWith ()
-spec_isoPrettyParseSuit = checkPrettyParseEnumIso @Suit "Suit"
-
-spec_isoPrettyParseCard :: SpecWith ()
-spec_isoPrettyParseCard = checkPrettyParseEnumIso @Card "Card"
-
-spec_isoPrettyParseHole :: SpecWith ()
-spec_isoPrettyParseHole = checkPrettyParseEnumIso @Hole "Hole"
-
-spec_isoPrettyParseShapedHole :: SpecWith ()
-spec_isoPrettyParseShapedHole = checkPrettyParseEnumIso @ShapedHole "ShapeHole"
-
-checkPrettyParseEnumIso ::
-  forall a.
-  (Eq a, ParsePretty a, Enum a, Bounded a, Show a) =>
-  String ->
-  SpecWith ()
-checkPrettyParseEnumIso typeName =
-  describe ("pretty and parse form iso" <> typeName) $
-    mapM_ (\val -> it (show val) $ roundTrip val == val) (enumerate @a)
-  where
-    renderPrettyT = T.pack . show . pretty
-    roundTrip = unsafeParsePretty . renderPrettyT
 
 spec_mkHole :: SpecWith ()
 spec_mkHole = do
@@ -245,8 +193,8 @@ spec_shapedHoleToHoles = do
       ]
     mkCase name combo expected =
       it name $
-        shapedHoleToHoles (unsafeParsePretty combo)
-          `shouldBe` unsafeParsePretty
+        shapedHoleToHoles (fromString combo)
+          `shouldBe` fromString
           <$> expected
 
 spec_toUnicode :: SpecWith ()

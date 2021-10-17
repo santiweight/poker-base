@@ -104,6 +104,7 @@ cardCases =
     ("2c", Card Two Club)
   ]
 
+
 spec_mkHole :: SpecWith ()
 spec_mkHole = do
   let aceS = Card Ace Spade
@@ -124,7 +125,7 @@ spec_mkHole = do
       `shouldSatisfy` all
         (\(c1, c2) -> c1 == c2 || isJust (mkHole c1 c2))
   where
-    allCardPairs = [(c1, c2) | c1 <- enumerate, c2 <- enumerate]
+    allCardPairs = [(c1, c2) | c1 <- allCards, c2 <- allCards]
 
 spec_mkShapedHole :: SpecWith ()
 spec_mkShapedHole = do
@@ -218,17 +219,13 @@ spec_all = do
     it "Suit" $ allSuits `shouldBe` allSuitsExpected
     it "Card" $ allCards `shouldBe` allCardsExpected
     it "number of Holes should be 1326" $
-      length (enumerate @Hole)
+      length allHoles
         `shouldBe` 1326
-    it "number of Holes should be 1326" $
-      length (nub $ enumerate @Hole)
-        `shouldBe` 1326
+    it "allHoles are unique" $ nub allShapedHoles `shouldBe` allShapedHoles
     it "number of ShapedHoles should be 169" $
-      length (enumerate @ShapedHole)
+      length allShapedHoles
         `shouldBe` 169
-    it "number of unique ShapedHoles should be 169" $
-      length (nub $ enumerate @ShapedHole)
-        `shouldBe` 169
+    it "allShapedHoles are unique" $ nub allShapedHoles `shouldBe` allShapedHoles
   where
     allSuitsExpected = [Club, Diamond, Heart, Spade]
     allRanksExpected =

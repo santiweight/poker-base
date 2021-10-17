@@ -12,18 +12,42 @@ import Prettyprinter
 #else
 import           Data.Text.Prettyprint.Doc
 #endif
-
+import Data.Functor
 import Data.List.Extra
 import Data.Maybe
-  ( fromJust,
-    isJust,
-    isNothing,
-  )
 import Data.Text (Text)
 import qualified Data.Text as T
 import Poker
 import Test.Hspec
 import Test.Tasty.QuickCheck
+
+spec_rankToChr :: SpecWith ()
+spec_rankToChr = do
+  it "rankToChr" $ (allRanks <&> rankToChr) `shouldBe` "23456789TJQKA"
+
+spec_chrToRank :: SpecWith ()
+spec_chrToRank = do
+  it "chrToRank <$> \"23456789TJQKA\"" $ (fromJust . chrToRank <$> "23456789TJQKA") `shouldBe` allRanks
+  it "chrToRank '1' == Nothing" $ chrToRank '1' `shouldBe` Nothing
+
+spec_suitToChr :: SpecWith ()
+spec_suitToChr = do
+  it "suitToChr" $ (allSuits <&> suitToChr) `shouldBe` "cdhs"
+
+spec_chrToSuit :: SpecWith ()
+spec_chrToSuit = do
+  it "chrToSuit <$> \"cdhs\"" $ (fromJust . chrToSuit <$> "cdhs") `shouldBe` allSuits
+  it "chrToSuit '1' == Nothing" $ chrToSuit '1' `shouldBe` Nothing
+
+spec_cardToShortTxt :: SpecWith ()
+spec_cardToShortTxt = it "cardToShortTxt" $ forM_ cardCases \(txt, card) -> cardToShortTxt card `shouldBe` txt
+
+spec_cardFromShortTxt :: SpecWith ()
+spec_cardFromShortTxt = do
+  it "cardFromShortTxt returns Just for all cards" $ forM_ cardCases \(txt, card) -> cardFromShortTxt txt `shouldBe` Just card
+  it "cardFromShortTxt \"Ac\" == Just (Card Ace Club)" $ cardFromShortTxt "Ac" `shouldBe` Just (Card Ace Club)
+  it "cardFromShortTxt \"Acd\" == Nothing" $ cardFromShortTxt "Acd" `shouldBe` Nothing
+  it "cardFromShortTxt \"AcAd\" == Nothing" $ cardFromShortTxt "AcAd" `shouldBe` Nothing
 
 spec_CardPrettyAndParse :: SpecWith ()
 spec_CardPrettyAndParse = do
@@ -135,11 +159,13 @@ checkPrettyParseEnumIso typeName =
 spec_mkHole :: SpecWith ()
 spec_mkHole = do
   let aceS = Card Ace Spade
-  let aceD = Card Ace Diamond
-  it "success" $
-    mkHole aceS aceD `shouldSatisfy` \case
-      Just (Hole c1 c2) | c1 == aceS, c2 == aceD -> True
+  let kingD = Card King Diamond
+  it "mkHole" $
+    mkHole aceS kingD `shouldSatisfy` \case
+      Just (Hole c1 c2) | c1 == aceS, c2 == kingD -> True
       _ -> False
+  it "mkHole order doesn't matter" $
+    mkHole aceS kingD `shouldBe` mkHole kingD aceS
   it "fail" $ let c = Card Two Club in mkHole c c `shouldBe` Nothing
   it "order doesn't matter" $
     allCardPairs

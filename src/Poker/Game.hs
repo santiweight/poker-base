@@ -1,60 +1,120 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- TODO fix exports
 module Poker.Game where
 
-#if MIN_VERSION_prettyprinter(1,7,0)
-import Prettyprinter
-#else
-import Data.Text.Prettyprint.Doc
-#endif
 import Data.Data
-import Data.List (sort)
+import Data.Text (Text)
+import Data.Word (Word8)
 import Poker.Cards
-import Poker.Utils (enumerate)
+import Prettyprinter
 
 -- | A player's position in a game of poker.
 --
 -- Future iterations of this library will use a safer/less-hacky representation
 -- for 'Position'
-data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | BU | SB | BB
+newtype Position = Position Word8
   deriving (Read, Show, Enum, Bounded, Eq, Ord, Data, Typeable)
 
 instance Pretty Position where
   pretty = viaShow
 
--- >>> allPositions
--- [UTG,UTG1,UTG2,UTG3,UTG4,UTG5,BU,SB,BB]
-allPositions :: [Position]
-allPositions = enumerate @Position
+-- TODO fromIntegral should not allow construction of unsupport table size
+-- TODO could be an enum? HeadsUp | Three | Four
+-- TODO could be a ranged natural?
+-- TODO name choice? TableSize?
+newtype NumPlayers = NumPlayers Word8
+  deriving (Num, Enum, Eq, Ord, Real, Integral)
 
--- | Sort a list of positions according to preflop ordering
+players2, players3, players4, players5, players6, players7, players8, players9 :: NumPlayers
+players2 = NumPlayers 2
+players3 = NumPlayers 3
+players4 = NumPlayers 4
+players5 = NumPlayers 5
+players6 = NumPlayers 6
+players7 = NumPlayers 7
+players8 = NumPlayers 8
+players9 = NumPlayers 9
+
+mkNumPlayers :: Integral a => a -> Maybe NumPlayers
+mkNumPlayers num | num >= 2 && num <= 9 = Just $ NumPlayers $ fromIntegral num
+mkNumPlayers _ = Nothing
+
+-- | 'Position's are ordered by table order. The first position in the list
+-- is the first player to act preflop. The last position in the list is always
+-- the big blind.
+-- >>> allPositions 6
+-- [Position 1,Position 2,Position 3,Position 4,Position 5,Position 6]
+allPositions :: NumPlayers -> [Position]
+allPositions (NumPlayers num) = Position <$> [1 .. num]
+
+-- |
+-- >>> positionToText 2 <$> allPositions 2
+-- ["BU","BB"]
+-- >>> positionToText 6 <$> allPositions 6
+-- ["LJ","HJ","CO","BU","SB","BB"]
+-- >>> positionToText 9 <$> allPositions 9
+-- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
 --
--- WARNING, TODO: This function does not yet handle heads-up appropriately
---
--- >>> sortPreflop $ [BB,BU,UTG1,SB,UTG,UTG2]
--- [UTG,UTG1,UTG2,BU,SB,BB]
--- >>> sortPreflop [SB, BB]
--- [SB,BB]
-sortPreflop :: [Position] -> [Position]
-sortPreflop = fmap toEnum . sort . fmap fromEnum
+-- TODO Pre-compute, via TH, Position -> Text maps for each NumPlayers, to avoid
+-- extra runtime cost
+positionToTxt :: NumPlayers -> Position -> Text
+positionToTxt (NumPlayers num) (Position pos) =
+  let allPositionTexts = ["UTG", "UTG1", "UTG2", "LJ", "HJ", "CO", "BU", "SB", "BB"]
+      positionTexts = case num of
+        2 -> ["BU", "BB"]
+        num' | num' > 2 && num' <= 9 -> drop (9 - fromIntegral num') allPositionTexts
+        _ -> error $ "Unexpected NumPlayers value: " <> show num
+   in positionTexts !! (fromIntegral pos - 1)
+
+-- >>> unsafePositionToText 2 <$> getPreflopOrder 2
+-- ["BU","BB"]
+-- >>> unsafePositionToText 6 <$> getPreflopOrder 6
+-- ["LJ","HJ","CO","BU","SB","BB"]
+-- >>> unsafePositionToText 9 <$> getPreflopOrder 9
+-- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
+getPreflopOrder :: NumPlayers -> [Position]
+getPreflopOrder = allPositions
+
+-- >>> buttonPosition 2
+-- Position 1
+-- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> [2..9]
+-- ["BU","BU","BU","BU","BU","BU","BU","BU"]
+buttonPosition :: NumPlayers -> Position
+buttonPosition (NumPlayers wo) = case wo of
+  2 -> Position 1
+  _ -> Position (wo - 2)
+
+-- >>> bigBlindPosition 2
+-- Position 2
+-- >>> (\numPlayers -> positionToTxt numPlayers $ bigBlindPosition numPlayers) <$> [2..9]
+-- ["BB","BB","BB","BB","BB","BB","BB","BB"]
+bigBlindPosition :: NumPlayers -> Position
+bigBlindPosition (NumPlayers wo) = Position wo
+
+-- >>> unsafePositionToText 2 <$> getPostFlopOrder 2
+-- ["BB","BU"]
+-- >>> unsafePositionToText 3 <$> getPostFlopOrder 3
+-- ["SB","BB","BU"]
+-- >>> unsafePositionToText 6 <$> getPostFlopOrder 6
+-- ["SB","BB","LJ","HJ","CO","BU"]
+-- >>> unsafePositionToText 9 <$> getPostFlopOrder 9
+-- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
+getPostFlopOrder :: NumPlayers -> [Position]
+getPostFlopOrder num = take (fromIntegral num) . drop 1 . dropWhile (/= buttonPosition num) . cycle $ allPositions num
 
 -- | Sort a list of positions acccording to postflop ordering
--- >>> sortPostflop $ [BB,BU,UTG1,SB,UTG,UTG2]
--- [SB,BB,UTG,UTG1,UTG2,BU]
--- >>> sortPostflop $ [UTG, SB, BU]
--- [SB,UTG,BU]
--- >>> sortPostflop $ [UTG]
--- [UTG]
-sortPostflop :: [Position] -> [Position]
-sortPostflop =
-  fmap (toEnum . fromPostFlopOrder) . sort
-    . fmap
-      (toPostFlopOrder . fromEnum)
-  where
-    fromPostFlopOrder = flip mod numPositions . (+ (numPositions - 2))
-    toPostFlopOrder = flip mod numPositions . (+ 2)
-    numPositions = fromEnum (maxBound @Position) - fromEnum (minBound @Position) + 1
+-- >>> unsafePositionToText 2 <$> sortPostflop 2 (allPositions 2)
+-- ["BB","BU"]
+-- >>> unsafePositionToText 3 <$> sortPostflop 3 (allPositions 3)
+-- ["SB","BB","BU"]
+-- >>> unsafePositionToText 6 <$> sortPostflop 6 (allPositions 6)
+-- ["SB","BB","LJ","HJ","CO","BU"]
+-- >>> unsafePositionToText 9 <$> sortPostflop 9 (allPositions 9)
+-- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
+sortPostflop :: NumPlayers -> [Position] -> [Position]
+sortPostflop num ps = filter (`elem` ps) $ getPostFlopOrder num
 
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)

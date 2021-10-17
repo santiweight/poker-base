@@ -40,8 +40,7 @@ module Poker.Cards
   )
 where
 
-import Control.Applicative (Alternative (empty), Applicative (liftA2))
-import Control.Monad (liftM2)
+import Control.Monad (join, liftM2)
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
 import Prettyprinter.Internal ( unsafeTextWithoutNewlines, Doc(Char) )
@@ -55,13 +54,7 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
-import Poker.ParsePretty
 import Poker.Utils
-import Text.Megaparsec
-  ( MonadParsec (label),
-    anySingle,
-    (<?>),
-  )
 
 -- | The 'Rank' of a playing 'Card'
 data Rank
@@ -82,9 +75,6 @@ data Rank
 
 instance Pretty Rank where
   pretty = unsafeTextWithoutNewlines . T.singleton . rankToChr
-
-instance ParsePretty Rank where
-  parsePrettyP = anySingle >>= (maybe empty pure . chrToRank) <?> "Rank"
 
 -- | >>> allRanks
 -- [Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King,Ace]
@@ -137,9 +127,6 @@ data Suit = Club | Diamond | Heart | Spade
 
 instance Pretty Suit where
   pretty = Char . suitToChr
-
-instance ParsePretty Suit where
-  parsePrettyP = anySingle >>= (maybe empty pure . chrToSuit) <?> "Suit"
 
 -- | >>> allSuits
 -- [Club,Diamond,Heart,Spade]
@@ -199,9 +186,6 @@ data Card = Card
 instance Pretty Card where
   pretty Card {rank = r, suit = s} = pretty r <> pretty s
 
-instance ParsePretty Card where
-  parsePrettyP = liftA2 Card parsePrettyP parsePrettyP
-
 instance IsString Card where
   fromString = fromJust . cardFromShortTxt . T.pack
 
@@ -223,7 +207,10 @@ data Hole = MkHole !Card !Card
 
 -- TODO tests
 instance IsString Hole where
-  fromString = fromJust . parsePretty . T.pack
+  fromString s@[r1, s1, r2, s2] =
+    fromMaybe (error $ "Invalid Hole: " <> s) . join $
+      mkHole <$> (cardFromShortTxt . T.pack) [r1, s1] <*> (cardFromShortTxt . T.pack) [r2, s2]
+  fromString str = error $ "Invalid Hole: " <> str
 
 {-# COMPLETE Hole #-}
 
@@ -266,15 +253,6 @@ allHoles = reverse $ do
 instance Pretty Hole where
   pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
--- >>> parsePretty @Hole "AhKs"
--- Just (Hole (Card {rank = Ace, suit = Heart}) (Card {rank = King, suit = Spade}))
-instance ParsePretty Hole where
-  parsePrettyP = label "Hole" $ do
-    c1 <- parsePrettyP
-    c2 <- parsePrettyP
-    maybe (tfailure $ "Invalid card: " <> prettyText (c1, c2)) pure $
-      mkHole c1 c2
-
 -- |
 -- A 'ShapedHole' is the 'Suit'-normalised representation of a
 -- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
@@ -309,6 +287,21 @@ pattern Offsuit r1 r2 <- MkOffsuit r1 r2
 
 pattern Suited :: Rank -> Rank -> ShapedHole
 pattern Suited r1 r2 <- MkSuited r1 r2
+
+instance IsString ShapedHole where
+  fromString str = case str of
+    [r1,r2,s] ->
+      fromMaybe invalidShapedHole $ do
+        r1' <- chrToRank r1
+        r2' <- chrToRank r2
+        case s of
+          'p' -> if r1' == r2' then Just $ mkPair r1' else Nothing
+          'o' -> mkOffsuit r1' r2'
+          's' -> mkSuited r1' r2'
+          _ -> Nothing
+    _ -> invalidShapedHole
+    where
+      invalidShapedHole = error $ "Invalid ShapedHole: " <> str
 
 mkPair :: Rank -> ShapedHole
 mkPair = MkPair
@@ -376,26 +369,6 @@ instance Pretty ShapedHole where
   pretty (Offsuit r1 r2) = pretty r1 <> pretty r2 <> "o"
   pretty (Suited r1 r2) = pretty r1 <> pretty r2 <> "s"
   pretty (Pair r) = pretty r <> pretty r <> "p"
-
-instance ParsePretty ShapedHole where
-  parsePrettyP = label "ShapedHole" $ do
-    r1 <- parsePrettyP @Rank
-    r2 <- parsePrettyP @Rank
-    let rs = (r1, r2)
-    anySingle >>= \case
-      'p' -> if r1 /= r2 then invalidShapedFail "Pair" rs else pure $ MkPair r1
-      'o' ->
-        if r1 == r2
-          then invalidShapedFail "Offsuit" rs
-          else pure $ unsafeMkOffsuit r1 r2
-      's' ->
-        if r1 == r2
-          then invalidShapedFail "Suited" rs
-          else pure $ unsafeMkSuited r1 r2
-      _ -> tfailure "Unexpected hand shape"
-    where
-      invalidShapedFail name rs =
-        tfailure $ "Invalid " <> name <> " ranks: " <> prettyText rs
 
 newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
 

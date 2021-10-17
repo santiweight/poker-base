@@ -12,18 +12,42 @@ import Prettyprinter
 #else
 import           Data.Text.Prettyprint.Doc
 #endif
-
+import Data.Functor
 import Data.List.Extra
 import Data.Maybe
-  ( fromJust,
-    isJust,
-    isNothing,
-  )
 import Data.Text (Text)
 import qualified Data.Text as T
 import Poker
 import Test.Hspec
 import Test.Tasty.QuickCheck
+
+spec_rankToChr :: SpecWith ()
+spec_rankToChr = do
+  it "rankToChr" $ (allRanks <&> rankToChr) `shouldBe` "23456789TJQKA"
+
+spec_chrToRank :: SpecWith ()
+spec_chrToRank = do
+  it "chrToRank <$> \"23456789TJQKA\"" $ (fromJust . chrToRank <$> "23456789TJQKA") `shouldBe` allRanks
+  it "chrToRank '1' == Nothing" $ chrToRank '1' `shouldBe` Nothing
+
+spec_suitToChr :: SpecWith ()
+spec_suitToChr = do
+  it "suitToChr" $ (allSuits <&> suitToChr) `shouldBe` "cdhs"
+
+spec_chrToSuit :: SpecWith ()
+spec_chrToSuit = do
+  it "chrToSuit <$> \"cdhs\"" $ (fromJust . chrToSuit <$> "cdhs") `shouldBe` allSuits
+  it "chrToSuit '1' == Nothing" $ chrToSuit '1' `shouldBe` Nothing
+
+spec_cardToShortTxt :: SpecWith ()
+spec_cardToShortTxt = it "cardToShortTxt" $ forM_ cardCases \(txt, card) -> cardToShortTxt card `shouldBe` txt
+
+spec_cardFromShortTxt :: SpecWith ()
+spec_cardFromShortTxt = do
+  it "cardFromShortTxt returns Just for all cards" $ forM_ cardCases \(txt, card) -> cardFromShortTxt txt `shouldBe` Just card
+  it "cardFromShortTxt \"Ac\" == Just (Card Ace Club)" $ cardFromShortTxt "Ac" `shouldBe` Just (Card Ace Club)
+  it "cardFromShortTxt \"Acd\" == Nothing" $ cardFromShortTxt "Acd" `shouldBe` Nothing
+  it "cardFromShortTxt \"AcAd\" == Nothing" $ cardFromShortTxt "AcAd" `shouldBe` Nothing
 
 spec_CardPrettyAndParse :: SpecWith ()
 spec_CardPrettyAndParse = do
@@ -122,7 +146,7 @@ spec_isoPrettyParseShapedHand = checkPrettyParseEnumIso @ShapedHand "ShapeHand"
 
 checkPrettyParseEnumIso ::
   forall a.
-  (Eq a, ParsePretty a, Pretty a, Enum a, Bounded a, Show a) =>
+  (Eq a, ParsePretty a, Enum a, Bounded a, Show a) =>
   String ->
   SpecWith ()
 checkPrettyParseEnumIso typeName =
@@ -138,7 +162,7 @@ spec_mkHand = do
   let aceD = Card Ace Diamond
   it "success" $
     mkHand aceS aceD `shouldSatisfy` \case
-      Just (Hand c1 c2) | c1 == aceS, c2 == aceD -> True
+      Just (Hand c1 c2) | c1 == aceD, c2 == aceS -> True
       _ -> False
   it "fail" $ let c = Card Two Club in mkHand c c `shouldBe` Nothing
   it "order doesn't matter" $

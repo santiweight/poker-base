@@ -41,10 +41,10 @@ instance Semigroup Freq where
 -- | A simple wrapper around a Map that uses different instances
 -- for Semigroup. Normally, the Semigroup instance for Map is a left-biased Map merge.
 -- Range merges require Monoid values, and the Note that the internal Map is strict
--- >>> mempty @(Range Hand Freq)
+-- >>> mempty @(Range Hole Freq)
 -- Range {_range = fromList []}
 -- >>> import qualified Data.Text as T
--- >>> let left = fromList [(unsafeParsePretty @ShapedHand $ T.pack "55p", Freq 1 3)]
+-- >>> let left = fromList [(unsafeParsePretty @ShapedHole $ T.pack "55p", Freq 1 3)]
 -- >>> let right = fromList [(unsafeParsePretty $ T.pack"55p", Freq 10 32)]
 -- >>> left <> right
 -- Range {_range = fromList [(MkPair Five,Freq 11 35)]}
@@ -79,10 +79,10 @@ getDecisionFreqRange ::
 getDecisionFreqRange p (Range m) =
   Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v) 1)) m
 
-holdingRangeToShapedRange :: Monoid v => Range Hand v -> Range ShapedHand v
+holdingRangeToShapedRange :: Monoid v => Range Hole v -> Range ShapedHole v
 holdingRangeToShapedRange (Range r) =
-  Range $ Map.mapKeysWith (<>) handToShaped r
+  Range $ Map.mapKeysWith (<>) holeToShapedHole r
 
-addShaped :: Num a => a -> Hand -> Range ShapedHand a -> Range ShapedHand a
-addShaped n comb (Range r) =
-  Range $ Map.alter (pure . maybe 0 (+ n)) (handToShaped comb) r
+addHoleToShapedRange :: Num a => a -> Hole -> Range ShapedHole a -> Range ShapedHole a
+addHoleToShapedRange n comb (Range r) =
+  Range $ Map.alter (pure . maybe 0 (+ n)) (holeToShapedHole comb) r

@@ -138,11 +138,11 @@ spec_isoPrettyParseSuit = checkPrettyParseEnumIso @Suit "Suit"
 spec_isoPrettyParseCard :: SpecWith ()
 spec_isoPrettyParseCard = checkPrettyParseEnumIso @Card "Card"
 
-spec_isoPrettyParseHand :: SpecWith ()
-spec_isoPrettyParseHand = checkPrettyParseEnumIso @Hand "Hand"
+spec_isoPrettyParseHole :: SpecWith ()
+spec_isoPrettyParseHole = checkPrettyParseEnumIso @Hole "Hole"
 
-spec_isoPrettyParseShapedHand :: SpecWith ()
-spec_isoPrettyParseShapedHand = checkPrettyParseEnumIso @ShapedHand "ShapeHand"
+spec_isoPrettyParseShapedHole :: SpecWith ()
+spec_isoPrettyParseShapedHole = checkPrettyParseEnumIso @ShapedHole "ShapeHole"
 
 checkPrettyParseEnumIso ::
   forall a.
@@ -156,28 +156,30 @@ checkPrettyParseEnumIso typeName =
     renderPrettyT = T.pack . show . pretty
     roundTrip = unsafeParsePretty . renderPrettyT
 
-spec_mkHand :: SpecWith ()
-spec_mkHand = do
+spec_mkHole :: SpecWith ()
+spec_mkHole = do
   let aceS = Card Ace Spade
-  let aceD = Card Ace Diamond
-  it "success" $
-    mkHand aceS aceD `shouldSatisfy` \case
-      Just (Hand c1 c2) | c1 == aceD, c2 == aceS -> True
+  let kingD = Card King Diamond
+  it "mkHole" $
+    mkHole aceS kingD `shouldSatisfy` \case
+      Just (Hole c1 c2) | c1 == aceS, c2 == kingD -> True
       _ -> False
-  it "fail" $ let c = Card Two Club in mkHand c c `shouldBe` Nothing
+  it "mkHole order doesn't matter" $
+    mkHole aceS kingD `shouldBe` mkHole kingD aceS
+  it "fail" $ let c = Card Two Club in mkHole c c `shouldBe` Nothing
   it "order doesn't matter" $
     allCardPairs
       `shouldSatisfy` all
-        (\(c1, c2) -> mkHand c1 c2 == mkHand c2 c1)
+        (\(c1, c2) -> mkHole c1 c2 == mkHole c2 c1)
   it "non-equal cards always succeed" $
     allCardPairs
       `shouldSatisfy` all
-        (\(c1, c2) -> c1 == c2 || isJust (mkHand c1 c2))
+        (\(c1, c2) -> c1 == c2 || isJust (mkHole c1 c2))
   where
     allCardPairs = [(c1, c2) | c1 <- enumerate, c2 <- enumerate]
 
-spec_mkShapedHand :: SpecWith ()
-spec_mkShapedHand = do
+spec_mkShapedHole :: SpecWith ()
+spec_mkShapedHole = do
   it "mkPair" $
     mkPair Ace `shouldSatisfy` \case
       Pair Ace -> True
@@ -209,19 +211,19 @@ spec_mkShapedHand = do
                       )
   it "mkOffsuit failure" $ mkOffsuit King King `shouldBe` Nothing
 
-spec_prettyShapedHand :: SpecWith ()
-spec_prettyShapedHand = do
+spec_prettyShapedHole :: SpecWith ()
+spec_prettyShapedHole = do
   it "Offsuit" $ show (pretty (mkOffsuit Ace Two)) `shouldBe` "A2o"
   it "Pair" $ show (pretty (mkPair Ace)) `shouldBe` "AAp"
   it "Suited" $ show (pretty (mkSuited Ace Two)) `shouldBe` "A2s"
 
 -- TODO Make sure test is total
--- TODO Make sure all ShapedHands are generated at the right frequency
+-- TODO Make sure all ShapedHoles are generated at the right frequency
 spec_handToShaped :: SpecWith ()
 spec_handToShaped = pure ()
 
-spec_shapedHandToHands :: SpecWith ()
-spec_shapedHandToHands = do
+spec_shapedHoleToHoles :: SpecWith ()
+spec_shapedHoleToHoles = do
   mkCase "Pair" "55p" ["5d5c", "5h5c", "5s5c", "5h5d", "5s5d", "5s5h"]
   mkCase "Suited" "AKs" ["AcKc", "AdKd", "AhKh", "AsKs"]
   mkCase "Offsuit" "QTo" offSuitExpected
@@ -243,7 +245,7 @@ spec_shapedHandToHands = do
       ]
     mkCase name combo expected =
       it name $
-        shapedHandToHands (unsafeParsePretty combo)
+        shapedHoleToHoles (unsafeParsePretty combo)
           `shouldBe` unsafeParsePretty
           <$> expected
 
@@ -267,17 +269,17 @@ spec_all = do
     it "Rank" $ allRanks `shouldBe` allRanksExpected
     it "Suit" $ allSuits `shouldBe` allSuitsExpected
     it "Card" $ allCards `shouldBe` allCardsExpected
-    it "number of Hands should be 1326" $
-      length (enumerate @Hand)
+    it "number of Holes should be 1326" $
+      length (enumerate @Hole)
         `shouldBe` 1326
-    it "number of Hands should be 1326" $
-      length (nub $ enumerate @Hand)
+    it "number of Holes should be 1326" $
+      length (nub $ enumerate @Hole)
         `shouldBe` 1326
-    it "number of ShapedHands should be 169" $
-      length (enumerate @ShapedHand)
+    it "number of ShapedHoles should be 169" $
+      length (enumerate @ShapedHole)
         `shouldBe` 169
-    it "number of unique ShapedHands should be 169" $
-      length (nub $ enumerate @ShapedHand)
+    it "number of unique ShapedHoles should be 169" $
+      length (nub $ enumerate @ShapedHole)
         `shouldBe` 169
   where
     allSuitsExpected = [Club, Diamond, Heart, Spade]

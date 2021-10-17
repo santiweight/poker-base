@@ -15,10 +15,10 @@ import           Data.Text.Prettyprint.Doc
 import Data.Functor
 import Data.List.Extra
 import Data.Maybe
+import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Poker
 import Test.Hspec
-import Data.String (IsString(fromString))
 
 spec_rankToChr :: SpecWith ()
 spec_rankToChr = do
@@ -104,7 +104,6 @@ cardCases =
     ("2c", Card Two Club)
   ]
 
-
 spec_mkHole :: SpecWith ()
 spec_mkHole = do
   let aceS = Card Ace Spade
@@ -160,16 +159,54 @@ spec_mkShapedHole = do
                       )
   it "mkOffsuit failure" $ mkOffsuit King King `shouldBe` Nothing
 
+spec_prettyCard :: SpecWith ()
+spec_prettyCard = do
+  it "Ac" $ show (pretty (Card Ace Club)) `shouldBe` "Ac"
+  it "2h" $ show (pretty (Card Two Heart)) `shouldBe` "2h"
+
+spec_cardIsString :: SpecWith ()
+spec_cardIsString = do
+  it "Ac is Card Ace Club" $ "Ac" `shouldBe` Card Ace Club
+  it "2h is Card Two Heart" $ "2h" `shouldBe` Card Two Heart
+  let failCase = failingIsString @Card
+  mapM_ failCase ["Ac2h", "AA", "cc"]
+
+spec_holeIsString :: SpecWith ()
+spec_holeIsString = do
+  it "AcKh" $ "AcKh" `shouldBe` fromJust (mkHole (Card Ace Club) (Card King Heart))
+  it "AcKh == KhAc" $ ("AcKh" :: Hole) `shouldBe` "KhAc"
+  let failCase = failingIsString @Hole
+  mapM_ failCase ["AAKh", "AcKK", "Ac", "AcK", "AcKhQd"]
+
+spec_prettyHole :: SpecWith ()
+spec_prettyHole = do
+  it "AcKh" $ show (pretty . fromJust $ mkHole (Card Ace Club) (Card King Heart)) `shouldBe` "AcKh"
+  it "5s2d" $ show (pretty . fromJust $ mkHole (Card Five Spade) (Card Two Diamond)) `shouldBe` "5s2d"
+
 spec_prettyShapedHole :: SpecWith ()
 spec_prettyShapedHole = do
   it "Offsuit" $ show (pretty (mkOffsuit Ace Two)) `shouldBe` "A2o"
   it "Pair" $ show (pretty (mkPair Ace)) `shouldBe` "AAp"
   it "Suited" $ show (pretty (mkSuited Ace Two)) `shouldBe` "A2s"
 
--- TODO Make sure test is total
--- TODO Make sure all ShapedHoles are generated at the right frequency
-spec_handToShaped :: SpecWith ()
-spec_handToShaped = pure ()
+spec_isStringShapedHole :: SpecWith ()
+spec_isStringShapedHole = do
+  it "AKo" $ "AKo" `shouldBe` MkOffsuit Ace King
+  it "AKo == KAo" $ ("AKo" :: ShapedHole) `shouldBe` "KAo"
+  it "AKs" $ "AKs" `shouldBe` MkSuited Ace King
+  it "AKs == KAs" $ ("AKs" :: ShapedHole) `shouldBe` "KAs"
+  it "AAp" $ "AAp" `shouldBe` MkPair Ace
+  let failCase = failingIsString @ShapedHole
+  mapM_
+    failCase
+    ["AKp", "AKf", "AFo", "FKo", "Kp", "AA", "p"]
+
+spec_holeToShaped :: SpecWith ()
+spec_holeToShaped = do
+  let doCase hole shaped = it (hole <> " => " <> shaped) $ holeToShapedHole (fromString hole) `shouldBe` fromString shaped
+  doCase "AcKd" "AKo"
+  doCase "AcKc" "AKs"
+  doCase "AcAs" "AAp"
 
 spec_shapedHoleToHoles :: SpecWith ()
 spec_shapedHoleToHoles = do
@@ -218,10 +255,8 @@ spec_all = do
     it "Rank" $ allRanks `shouldBe` allRanksExpected
     it "Suit" $ allSuits `shouldBe` allSuitsExpected
     it "Card" $ allCards `shouldBe` allCardsExpected
-    it "number of Holes should be 1326" $
-      length allHoles
-        `shouldBe` 1326
-    it "allHoles are unique" $ nub allShapedHoles `shouldBe` allShapedHoles
+    it "number of Holes should be 1326" $ length allHoles `shouldBe` 1326
+    it "allHoles are unique" $ nub allHoles `shouldBe` allHoles
     it "number of ShapedHoles should be 169" $
       length allShapedHoles
         `shouldBe` 169
@@ -247,3 +282,8 @@ spec_all = do
 
 spec_freshDeck :: SpecWith ()
 spec_freshDeck = it "freshDeck" $ freshDeck `shouldBe` unsafeMkDeck allCards
+
+-- Check that a call to IsString fails for the given type. Values are forced via
+-- value's Show instance
+failingIsString :: forall a. (IsString a, Show a) => String -> SpecWith ()
+failingIsString str = it (str <> " fails") $ print (fromString @a str) `shouldThrow` anyErrorCall

@@ -2,16 +2,8 @@
 
 module Test.Poker.Game where
 
-import Data.List.Extra (enumerate)
 import Poker
 import Test.Hspec
-import Test.QuickCheck
-  ( Gen,
-    Property,
-    forAll,
-    shuffle,
-    sublistOf,
-  )
 
 spec_allPositions :: SpecWith ()
 spec_allPositions = do

@@ -81,8 +81,8 @@ getDecisionFreqRange p (Range m) =
 
 holdingRangeToShapedRange :: Monoid v => Range Hole v -> Range ShapedHole v
 holdingRangeToShapedRange (Range r) =
-  Range $ Map.mapKeysWith (<>) holeToShaped r
+  Range $ Map.mapKeysWith (<>) holeToShapedHole r
 
-addShaped :: Num a => a -> Hole -> Range ShapedHole a -> Range ShapedHole a
-addShaped n comb (Range r) =
-  Range $ Map.alter (pure . maybe 0 (+ n)) (holeToShaped comb) r
+addHoleToShapedRange :: Num a => a -> Hole -> Range ShapedHole a -> Range ShapedHole a
+addHoleToShapedRange n comb (Range r) =
+  Range $ Map.alter (pure . maybe 0 (+ n)) (holeToShapedHole comb) r

@@ -24,8 +24,8 @@ module Poker.Cards
     mkSuited,
     unsafeMkSuited,
     unsafeMkOffsuit,
-    listShapedHoles,
-    holeToShaped,
+    allShapedHoles,
+    holeToShapedHole,
     Deck,
     pattern Deck,
     freshDeck,
@@ -329,8 +329,8 @@ unsafeMkOffsuit r1 r2 =
   fromMaybe (terror $ "Cannot form offsuit hand from: " <> prettyText (r1, r2)) $
     mkOffsuit r1 r2
 
-listShapedHoles :: [ShapedHole]
-listShapedHoles = reverse $ do
+allShapedHoles :: [ShapedHole]
+allShapedHoles = reverse $ do
   rank1 <- enumerate
   rank2 <- enumerate
   return $ case compare rank1 rank2 of
@@ -360,8 +360,8 @@ shapedHoleToHoles = \case
     pure $ unsafeMkHole (Card r1 s) (Card r2 s)
 
 -- TODO needs tests
-holeToShaped :: Hole -> ShapedHole
-holeToShaped (Hole (Card r1 s1) (Card r2 s2))
+holeToShapedHole :: Hole -> ShapedHole
+holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1
   | s1 == s2 = unsafeMkSuited r1 r2
   | otherwise = unsafeMkOffsuit r1 r2
@@ -371,17 +371,17 @@ instance Enum ShapedHole where
     fromMaybe (error $ "Invalid ShapedHole enum: " <> show num)
       . flip
         Data.IntMap.Strict.lookup
-        (Data.IntMap.Strict.fromList $ zip [1 ..] listShapedHoles)
+        (Data.IntMap.Strict.fromList $ zip [1 ..] allShapedHoles)
       $ num
   fromEnum =
     fromJust
       . flip
         Data.Map.Strict.lookup
-        (Data.Map.Strict.fromList $ zip listShapedHoles [1 ..])
+        (Data.Map.Strict.fromList $ zip allShapedHoles [1 ..])
 
 instance Bounded ShapedHole where
-  minBound = head listShapedHoles
-  maxBound = last listShapedHoles
+  minBound = head allShapedHoles
+  maxBound = last allShapedHoles
 
 instance Pretty ShapedHole where
   pretty (Offsuit r1 r2) = pretty r1 <> pretty r2 <> "o"

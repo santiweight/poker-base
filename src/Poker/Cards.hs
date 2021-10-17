@@ -50,8 +50,6 @@ import           Data.Text.Prettyprint.Doc.Internal
 #endif
 
 import Data.Bifunctor (Bifunctor (second))
-import qualified Data.IntMap.Strict
-import qualified Data.Map.Strict
 import Data.Maybe
 import Data.String (IsString (fromString))
 import Data.Text (Text)
@@ -204,15 +202,6 @@ instance Pretty Card where
 instance ParsePretty Card where
   parsePrettyP = liftA2 Card parsePrettyP parsePrettyP
 
-instance Enum Card where
-  toEnum n =
-    fromMaybe (error $ "Invalid Card enum: " <> show n) $ atMay allCards n
-  fromEnum c = fromEnum (rank c) * 4 + fromEnum (suit c)
-
-instance Bounded Card where
-  minBound = toEnum 0
-  maxBound = toEnum 51
-
 instance IsString Card where
   fromString = fromJust . cardFromShortTxt . T.pack
 
@@ -271,23 +260,6 @@ allHoles = reverse $ do
       then [(s1, s2) | s1 <- enumerate, s2 <- drop 1 (enumFrom s1)]
       else liftM2 (,) enumerate enumerate
   pure $ unsafeMkHole (Card r1 s1) (Card r2 s2)
-
-instance Enum Hole where
-  toEnum num =
-    fromMaybe (error $ "Invalid Hole enum: " <> show num)
-      . flip
-        Data.IntMap.Strict.lookup
-        (Data.IntMap.Strict.fromList $ zip [1 ..] allHoles)
-      $ num
-  fromEnum =
-    fromJust
-      . flip
-        Data.Map.Strict.lookup
-        (Data.Map.Strict.fromList $ zip allHoles [1 ..])
-
-instance Bounded Hole where
-  minBound = head allHoles
-  maxBound = last allHoles
 
 -- >>> pretty $ Hole (Card Ace Heart) (Card King Spade)
 -- AhKs
@@ -399,23 +371,6 @@ holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1
   | s1 == s2 = unsafeMkSuited r1 r2
   | otherwise = unsafeMkOffsuit r1 r2
-
-instance Enum ShapedHole where
-  toEnum num =
-    fromMaybe (error $ "Invalid ShapedHole enum: " <> show num)
-      . flip
-        Data.IntMap.Strict.lookup
-        (Data.IntMap.Strict.fromList $ zip [1 ..] allShapedHoles)
-      $ num
-  fromEnum =
-    fromJust
-      . flip
-        Data.Map.Strict.lookup
-        (Data.Map.Strict.fromList $ zip allShapedHoles [1 ..])
-
-instance Bounded ShapedHole where
-  minBound = head allShapedHoles
-  maxBound = last allShapedHoles
 
 instance Pretty ShapedHole where
   pretty (Offsuit r1 r2) = pretty r1 <> pretty r2 <> "o"

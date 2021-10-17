@@ -5,7 +5,7 @@
 
 ## Description
 
-Basic datatypes for writing code that handles poker (poker simulation, a poker website, solver etc.). This package is intended to be industry-ready (WIP).
+`poker-base` provides basic datatypes and infrastructure to handle poker computation. Once developed, the package intends to be industry-ready and provide capabilities that support poker websites, simulation, research and poker trainers and assistants.
 
 Pull requests or suggestions (preferably created in an issue), are not just encouraged but highly requested! We are quick to respond to any help you might need :)
 
@@ -32,7 +32,7 @@ Some principles that this library aims to uphold:
 
  - [`poker-game`](https://github.com/santiweight/poker-game): a library for the rules of no-limit poker (not just holdem)
  - [`poker-histories`](https://github.com/santiweight/poker-histories): a library for parsing poker site hand histories. Currently supports PokerStars and Bovada.
- - [`poker-fold`](https://github.com/tonyday567/poker-fold): TODO @Tony
+ - [`poker-ai`](https://github.com/tonyday567/poker-fold): an experimental platform for researching poker strategy and intelligence.
  - Various other private repos. If you are interested - please drop a line to the authors :)
 
 ## Contributing

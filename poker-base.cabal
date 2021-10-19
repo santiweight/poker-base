@@ -28,11 +28,11 @@ library
   exposed-modules:
     Poker
     Poker.Range
-  other-modules:
     Poker.Amount
     Poker.BigBlind
     Poker.Cards
     Poker.Game
+  other-modules:
     Poker.Utils
   hs-source-dirs:
     src

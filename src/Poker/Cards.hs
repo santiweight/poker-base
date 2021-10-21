@@ -147,6 +147,8 @@ suitToChr = \case
 -- >>> chrToSuit '1'
 -- Nothing
 -- prop> chrToSuit (suitToChr s) == Just s
+-- Variable not in scope: s :: Suit
+-- Variable not in scope: s :: Suit
 chrToSuit :: Char -> Maybe Suit
 chrToSuit = \case
   'c' -> pure Club
@@ -267,13 +269,12 @@ allHoles = reverse $ do
 -- offsuit : 24o
 -- suited : 24s
 --
--- >>> import Poker.ParsePretty
--- >>> parsePretty @ShapedHole "22p"
--- Just (MkPair Two)
--- >>> parsePretty @ShapedHole "24o"
--- Just (MkOffsuit Four Two)
--- >>> parsePretty @ShapedHole "24s"
--- Just (MkSuited Four Two)
+-- >>> "22p" :: ShapedHole
+-- MkPair Two
+-- >>> "A4o" :: ShapedHole
+-- MkOffsuit Ace Four
+-- >>> "KJs" :: ShapedHole
+-- MkSuited King Jack
 --
 -- TODO Make patterns uni-directional (don't expose constructors)
 data ShapedHole = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
@@ -339,12 +340,11 @@ allShapedHoles = reverse $ do
     EQ -> mkPair rank1
     LT -> unsafeMkOffsuit rank1 rank2
 
--- | >>> import Poker.ParsePretty
--- >>> pretty . shapedHoleToHoles $ unsafeParsePretty "55p"
+-- >>> pretty . shapedHoleToHoles $ "55p"
 -- [5d5c, 5h5c, 5s5c, 5h5d, 5s5d, 5s5h]
--- >>> pretty . shapedHoleToHoles $ unsafeParsePretty "97o"
+-- >>> pretty . shapedHoleToHoles $ "97o"
 -- [9c7d, 9c7h, 9c7s, 9d7c, 9d7h, 9d7s, 9h7c, 9h7d, 9h7s, 9s7c, 9s7d, 9s7h]
--- >>> pretty . shapedHoleToHoles $ unsafeParsePretty "QTs"
+-- >>> pretty . shapedHoleToHoles $ "QTs"
 -- [QcTc, QdTd, QhTh, QsTs]
 shapedHoleToHoles :: ShapedHole -> [Hole]
 shapedHoleToHoles = \case

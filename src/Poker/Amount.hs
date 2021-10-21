@@ -29,6 +29,9 @@ import Prettyprinter (Pretty (pretty), viaShow)
 import Data.Text.Prettyprint.Doc (Pretty (pretty), viaShow)
 #endif
 
+-- $setup
+-- >>> :set -XDataKinds
+
 -- |
 -- 'Amount' is the type used to represent amounts of money during a game of poker.
 -- The internal representation of 'Amount' is a @Discrete\'@ from the

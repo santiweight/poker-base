@@ -50,11 +50,11 @@ allPositions :: NumPlayers -> [Position]
 allPositions (NumPlayers num) = Position <$> [1 .. num]
 
 -- |
--- >>> positionToText 2 <$> allPositions 2
+-- >>> positionToTxt 2 <$> allPositions 2
 -- ["BU","BB"]
--- >>> positionToText 6 <$> allPositions 6
+-- >>> positionToTxt 6 <$> allPositions 6
 -- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> positionToText 9 <$> allPositions 9
+-- >>> positionToTxt 9 <$> allPositions 9
 -- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
 --
 -- TODO Pre-compute, via TH, Position -> Text maps for each NumPlayers, to avoid
@@ -68,11 +68,11 @@ positionToTxt (NumPlayers num) (Position pos) =
         _ -> error $ "Unexpected NumPlayers value: " <> show num
    in positionTexts !! (fromIntegral pos - 1)
 
--- >>> unsafePositionToText 2 <$> getPreflopOrder 2
+-- >>> positionToTxt 2 <$> getPreflopOrder 2
 -- ["BU","BB"]
--- >>> unsafePositionToText 6 <$> getPreflopOrder 6
+-- >>> positionToTxt 6 <$> getPreflopOrder 6
 -- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> unsafePositionToText 9 <$> getPreflopOrder 9
+-- >>> positionToTxt 9 <$> getPreflopOrder 9
 -- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
 getPreflopOrder :: NumPlayers -> [Position]
 getPreflopOrder = allPositions
@@ -93,25 +93,25 @@ buttonPosition (NumPlayers wo) = case wo of
 bigBlindPosition :: NumPlayers -> Position
 bigBlindPosition (NumPlayers wo) = Position wo
 
--- >>> unsafePositionToText 2 <$> getPostFlopOrder 2
+-- >>> positionToTxt 2 <$> getPostFlopOrder 2
 -- ["BB","BU"]
--- >>> unsafePositionToText 3 <$> getPostFlopOrder 3
+-- >>> positionToTxt 3 <$> getPostFlopOrder 3
 -- ["SB","BB","BU"]
--- >>> unsafePositionToText 6 <$> getPostFlopOrder 6
+-- >>> positionToTxt 6 <$> getPostFlopOrder 6
 -- ["SB","BB","LJ","HJ","CO","BU"]
--- >>> unsafePositionToText 9 <$> getPostFlopOrder 9
+-- >>> positionToTxt 9 <$> getPostFlopOrder 9
 -- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
 getPostFlopOrder :: NumPlayers -> [Position]
 getPostFlopOrder num = take (fromIntegral num) . drop 1 . dropWhile (/= buttonPosition num) . cycle $ allPositions num
 
 -- | Sort a list of positions acccording to postflop ordering
--- >>> unsafePositionToText 2 <$> sortPostflop 2 (allPositions 2)
+-- >>> positionToTxt 2 <$> sortPostflop 2 (allPositions 2)
 -- ["BB","BU"]
--- >>> unsafePositionToText 3 <$> sortPostflop 3 (allPositions 3)
+-- >>> positionToTxt 3 <$> sortPostflop 3 (allPositions 3)
 -- ["SB","BB","BU"]
--- >>> unsafePositionToText 6 <$> sortPostflop 6 (allPositions 6)
+-- >>> positionToTxt 6 <$> sortPostflop 6 (allPositions 6)
 -- ["SB","BB","LJ","HJ","CO","BU"]
--- >>> unsafePositionToText 9 <$> sortPostflop 9 (allPositions 9)
+-- >>> positionToTxt 9 <$> sortPostflop 9 (allPositions 9)
 -- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
 sortPostflop :: NumPlayers -> [Position] -> [Position]
 sortPostflop num ps = filter (`elem` ps) $ getPostFlopOrder num

@@ -1,4 +1,6 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Poker.Cards
@@ -53,8 +55,10 @@ import Data.Maybe
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
 import Poker.Utils
+import Test.QuickCheck.Arbitrary.Generic (Arbitrary, GenericArbitrary (..))
 
 -- | The 'Rank' of a playing 'Card'
 data Rank
@@ -71,7 +75,8 @@ data Rank
   | Queen
   | King
   | Ace
-  deriving (Enum, Bounded, Eq, Ord, Show, Read)
+  deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Rank
 
 instance Pretty Rank where
   pretty = unsafeTextWithoutNewlines . T.singleton . rankToChr
@@ -123,7 +128,8 @@ chrToRank = \case
 
 -- | The 'Suit' of a playing 'Card'
 data Suit = Club | Diamond | Heart | Spade
-  deriving (Enum, Bounded, Eq, Ord, Show, Read)
+  deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Suit
 
 instance Pretty Suit where
   pretty = Char . suitToChr
@@ -183,7 +189,8 @@ data Card = Card
   { rank :: !Rank,
     suit :: !Suit
   }
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Card
 
 instance Pretty Card where
   pretty Card {rank = r, suit = s} = pretty r <> pretty s
@@ -205,7 +212,8 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
 data Hole = MkHole !Card !Card
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Hole
 
 instance IsString Hole where
   fromString str = case str of
@@ -278,7 +286,8 @@ allHoles = reverse $ do
 --
 -- TODO Make patterns uni-directional (don't expose constructors)
 data ShapedHole = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary ShapedHole
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 

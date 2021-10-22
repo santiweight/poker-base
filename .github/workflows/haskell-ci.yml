@@ -9,6 +9,11 @@ jobs:
         ghc: ['8.6.5', '8.10.7', '9.0.1']
         cabal: ['3.4.0.0']
         os: [ubuntu-latest, macOS-latest]
+        experimental: [false]
+        include:
+          - os: windows-latest
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
     name: ghc ${{ matrix.ghc }}
     steps:
       - uses: actions/checkout@v2

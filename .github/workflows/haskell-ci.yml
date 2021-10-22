@@ -6,8 +6,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ghc: ['8.6.5', '8.10.7', '9.0.1']
-        cabal: ['3.4.0.0']
+        ghc: ['8.6.5', '8.8.4', '8.10.7', '9.0.1']
+        cabal: ['3.4.0.0', '3.6.2.0']
         os: [ubuntu-latest, macOS-latest]
         experimental: [false]
         include:
@@ -15,7 +15,7 @@ jobs:
             ghc: '8.10.7'
             experimental: true
     continue-on-error: ${{ matrix.experimental }}
-    name: ghc ${{ matrix.ghc }}
+    name: ghc ${{ matrix.ghc }} ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Haskell
@@ -30,7 +30,7 @@ jobs:
           echo "CABAL_PKGS_DIR=~/.cabal/packages" >> $GITHUB_ENV
       - name: cabal configure
         run: |
-          cabal configure --enable-tests --write-ghc-environment-files=always
+          cabal configure --enable-tests --write-ghc-environment-files=always --test-show-details=direct
       - if: ${{ matrix.os != 'windows-latest'}}
         name: cabal cache (non-windows)
         uses: actions/cache@v2
@@ -66,4 +66,8 @@ jobs:
           cabal test all --enable-tests --write-ghc-environment-files=always
       - name: haddock
         run: |
-          cabal haddock
+          cabal haddock all
+      - name: cabal check & sdist
+        run: |
+          cabal -vnormal check
+          cabal sdist all

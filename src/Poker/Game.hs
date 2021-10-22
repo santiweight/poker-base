@@ -95,7 +95,7 @@ positionToTxt (numPlayersToWord8 -> num) (Position pos) =
 getPreflopOrder :: NumPlayers -> [Position]
 getPreflopOrder = allPositions
 
--- >>> buttonPosition TwoPlayers
+-- | >>> buttonPosition TwoPlayers
 -- Position 1
 -- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> enumFromTo TwoPlayers NinePlayers
 -- ["BU","BU","BU","BU","BU","BU","BU","BU"]

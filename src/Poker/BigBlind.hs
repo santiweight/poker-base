@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- TODO fix exports
-module Poker.BigBlind ( BigBlind(..),bigBlindToDense)where
+module Poker.BigBlind (BigBlind (..), bigBlindToDense) where
 
 import GHC.Generics (Generic)
 import Money

@@ -1,7 +1,15 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Poker.Range where
+module Poker.Range
+  ( Freq (..),
+    Range (..),
+    rangeFromList,
+    getDecisionFreqRange,
+    holdingRangeToShapedRange,
+    addHoleToShapedRange,
+  )
+where
 
 import Data.Bool (bool)
 import Data.Map (Map)
@@ -52,8 +60,8 @@ newtype Range a b = Range
   {_range :: Map a b}
   deriving (Read, Eq, Show)
 
-fromList :: Ord a => [(a, b)] -> Range a b
-fromList = Range . Map.fromList
+rangeFromList :: Ord a => [(a, b)] -> Range a b
+rangeFromList = Range . Map.fromList
 
 instance (Ord a, Monoid b) => Monoid (Range a b) where
   mempty = Range Map.empty

@@ -1,7 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- TODO fix exports
-module Poker.Game where
+module Poker.Game
+  ( Position (..),
+    NumPlayers (..),
+    numPlayersToWord8,
+    numPlayersFromWord8,
+    mkNumPlayers,
+    allPositions,
+    positionToTxt,
+    getPreflopOrder,
+    buttonPosition,
+    bigBlindPosition,
+    getPostFlopOrder,
+    sortPostflop,
+    Seat (..),
+    Pot (..),
+    Stack (..),
+    Stake (..),
+  )
+where
 
 import Data.Data
 import Data.Text (Text)

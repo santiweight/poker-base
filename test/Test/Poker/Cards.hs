@@ -191,11 +191,11 @@ spec_prettyShapedHole = do
 
 spec_isStringShapedHole :: SpecWith ()
 spec_isStringShapedHole = do
-  it "AKo" $ "AKo" `shouldBe` MkOffsuit Ace King
+  it "AKo" $ "AKo" `shouldBe` unsafeOffsuit Ace King
   it "AKo == KAo" $ ("AKo" :: ShapedHole) `shouldBe` "KAo"
-  it "AKs" $ "AKs" `shouldBe` MkSuited Ace King
+  it "AKs" $ "AKs" `shouldBe` unsafeSuited Ace King
   it "AKs == KAs" $ ("AKs" :: ShapedHole) `shouldBe` "KAs"
-  it "AAp" $ "AAp" `shouldBe` MkPair Ace
+  it "AAp" $ "AAp" `shouldBe` Pair Ace
   let failCase = failingIsString @ShapedHole
   mapM_
     failCase

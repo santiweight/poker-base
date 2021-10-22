@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- TODO fix exports
@@ -24,21 +23,41 @@ instance Pretty Position where
 -- TODO could be an enum? HeadsUp | Three | Four
 -- TODO could be a ranged natural?
 -- TODO name choice? TableSize?
-newtype NumPlayers = NumPlayers Word8
-  deriving (Num, Enum, Eq, Ord, Real, Integral)
+data NumPlayers
+  = TwoPlayers
+  | ThreePlayers
+  | FourPlayers
+  | FivePlayers
+  | SixPlayers
+  | SevenPlayers
+  | EightPlayers
+  | NinePlayers
+  deriving (Enum, Eq, Ord)
 
-players2, players3, players4, players5, players6, players7, players8, players9 :: NumPlayers
-players2 = NumPlayers 2
-players3 = NumPlayers 3
-players4 = NumPlayers 4
-players5 = NumPlayers 5
-players6 = NumPlayers 6
-players7 = NumPlayers 7
-players8 = NumPlayers 8
-players9 = NumPlayers 9
+numPlayersToWord8 :: NumPlayers -> Word8
+numPlayersToWord8 TwoPlayers = 2
+numPlayersToWord8 ThreePlayers = 3
+numPlayersToWord8 FourPlayers = 4
+numPlayersToWord8 FivePlayers = 5
+numPlayersToWord8 SixPlayers = 6
+numPlayersToWord8 SevenPlayers = 7
+numPlayersToWord8 EightPlayers = 8
+numPlayersToWord8 NinePlayers = 9
 
+numPlayersFromWord8 :: Word8 -> Maybe NumPlayers
+numPlayersFromWord8 2 = Just TwoPlayers
+numPlayersFromWord8 3 = Just ThreePlayers
+numPlayersFromWord8 4 = Just FourPlayers
+numPlayersFromWord8 5 = Just FivePlayers
+numPlayersFromWord8 6 = Just SixPlayers
+numPlayersFromWord8 7 = Just SevenPlayers
+numPlayersFromWord8 8 = Just EightPlayers
+numPlayersFromWord8 9 = Just NinePlayers
+numPlayersFromWord8 _ = Nothing
+
+-- | WARNING: The incoming 'Integral' is downcast to a 'Word8'
 mkNumPlayers :: Integral a => a -> Maybe NumPlayers
-mkNumPlayers num | num >= 2 && num <= 9 = Just $ NumPlayers $ fromIntegral num
+mkNumPlayers num | num >= 2 && num <= 9 = numPlayersFromWord8 $ fromIntegral num
 mkNumPlayers _ = Nothing
 
 -- | 'Position's are ordered by table order. The first position in the list
@@ -47,7 +66,7 @@ mkNumPlayers _ = Nothing
 -- >>> allPositions 6
 -- [Position 1,Position 2,Position 3,Position 4,Position 5,Position 6]
 allPositions :: NumPlayers -> [Position]
-allPositions (NumPlayers num) = Position <$> [1 .. num]
+allPositions (numPlayersToWord8 -> num) = Position <$> [1 .. num]
 
 -- |
 -- >>> positionToTxt 2 <$> allPositions 2
@@ -60,7 +79,7 @@ allPositions (NumPlayers num) = Position <$> [1 .. num]
 -- TODO Pre-compute, via TH, Position -> Text maps for each NumPlayers, to avoid
 -- extra runtime cost
 positionToTxt :: NumPlayers -> Position -> Text
-positionToTxt (NumPlayers num) (Position pos) =
+positionToTxt (numPlayersToWord8 -> num) (Position pos) =
   let allPositionTexts = ["UTG", "UTG1", "UTG2", "LJ", "HJ", "CO", "BU", "SB", "BB"]
       positionTexts = case num of
         2 -> ["BU", "BB"]
@@ -82,16 +101,16 @@ getPreflopOrder = allPositions
 -- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> [2..9]
 -- ["BU","BU","BU","BU","BU","BU","BU","BU"]
 buttonPosition :: NumPlayers -> Position
-buttonPosition (NumPlayers wo) = case wo of
+buttonPosition (numPlayersToWord8 -> num) = case num of
   2 -> Position 1
-  _ -> Position (wo - 2)
+  _ -> Position (num - 2)
 
 -- >>> bigBlindPosition 2
 -- Position 2
 -- >>> (\numPlayers -> positionToTxt numPlayers $ bigBlindPosition numPlayers) <$> [2..9]
 -- ["BB","BB","BB","BB","BB","BB","BB","BB"]
 bigBlindPosition :: NumPlayers -> Position
-bigBlindPosition (NumPlayers wo) = Position wo
+bigBlindPosition (numPlayersToWord8 -> num) = Position num
 
 -- >>> positionToTxt 2 <$> getPostFlopOrder 2
 -- ["BB","BU"]
@@ -102,16 +121,21 @@ bigBlindPosition (NumPlayers wo) = Position wo
 -- >>> positionToTxt 9 <$> getPostFlopOrder 9
 -- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
 getPostFlopOrder :: NumPlayers -> [Position]
-getPostFlopOrder num = take (fromIntegral num) . drop 1 . dropWhile (/= buttonPosition num) . cycle $ allPositions num
+getPostFlopOrder numPlayers@(fromIntegral . numPlayersToWord8 -> num) =
+  take num
+    . drop 1
+    . dropWhile (/= buttonPosition numPlayers)
+    . cycle
+    $ allPositions numPlayers
 
 -- | Sort a list of positions acccording to postflop ordering
--- >>> positionToTxt 2 <$> sortPostflop 2 (allPositions 2)
+-- >>> positionToTxt TwoPlayers <$> sortPostflop TwoPlayers (allPositions TwoPlayers)
 -- ["BB","BU"]
--- >>> positionToTxt 3 <$> sortPostflop 3 (allPositions 3)
+-- >>> positionToTxt ThreePlayers <$> sortPostflop ThreePlayers (allPositions ThreePlayers)
 -- ["SB","BB","BU"]
--- >>> positionToTxt 6 <$> sortPostflop 6 (allPositions 6)
+-- >>> positionToTxt SixPlayers <$> sortPostflop SixPlayers (allPositions SixPlayers)
 -- ["SB","BB","LJ","HJ","CO","BU"]
--- >>> positionToTxt 9 <$> sortPostflop 9 (allPositions 9)
+-- >>> positionToTxt NinePlayers <$> sortPostflop NinePlayers (allPositions NinePlayers)
 -- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
 sortPostflop :: NumPlayers -> [Position] -> [Position]
 sortPostflop num ps = filter (`elem` ps) $ getPostFlopOrder num

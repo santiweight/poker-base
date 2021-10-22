@@ -102,7 +102,8 @@ test-suite all-tests
     tasty-discover,
     tasty-hspec >= 1.1 && < 1.3,
     tasty-quickcheck >= 0.10.1 && < 0.11
-
+  build-tool-depends:
+    tasty-discover:tasty-discover
   default-language: Haskell2010
   default-extensions:
     ConstraintKinds

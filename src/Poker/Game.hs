@@ -63,17 +63,16 @@ mkNumPlayers _ = Nothing
 -- | 'Position's are ordered by table order. The first position in the list
 -- is the first player to act preflop. The last position in the list is always
 -- the big blind.
--- >>> allPositions 6
+-- >>> allPositions SixPlayers
 -- [Position 1,Position 2,Position 3,Position 4,Position 5,Position 6]
 allPositions :: NumPlayers -> [Position]
 allPositions (numPlayersToWord8 -> num) = Position <$> [1 .. num]
 
--- |
--- >>> positionToTxt 2 <$> allPositions 2
+-- | >>> positionToTxt TwoPlayers <$> allPositions TwoPlayers
 -- ["BU","BB"]
--- >>> positionToTxt 6 <$> allPositions 6
+-- >>> positionToTxt SixPlayers <$> allPositions SixPlayers
 -- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> positionToTxt 9 <$> allPositions 9
+-- >>> positionToTxt NinePlayers <$> allPositions NinePlayers
 -- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
 --
 -- TODO Pre-compute, via TH, Position -> Text maps for each NumPlayers, to avoid
@@ -87,38 +86,38 @@ positionToTxt (numPlayersToWord8 -> num) (Position pos) =
         _ -> error $ "Unexpected NumPlayers value: " <> show num
    in positionTexts !! (fromIntegral pos - 1)
 
--- >>> positionToTxt 2 <$> getPreflopOrder 2
+-- | >>> positionToTxt TwoPlayers <$> getPreflopOrder TwoPlayers
 -- ["BU","BB"]
--- >>> positionToTxt 6 <$> getPreflopOrder 6
+-- >>> positionToTxt SixPlayers <$> getPreflopOrder SixPlayers
 -- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> positionToTxt 9 <$> getPreflopOrder 9
+-- >>> positionToTxt NinePlayers <$> getPreflopOrder NinePlayers
 -- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
 getPreflopOrder :: NumPlayers -> [Position]
 getPreflopOrder = allPositions
 
--- >>> buttonPosition 2
+-- >>> buttonPosition TwoPlayers
 -- Position 1
--- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> [2..9]
+-- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> enumFromTo TwoPlayers NinePlayers
 -- ["BU","BU","BU","BU","BU","BU","BU","BU"]
 buttonPosition :: NumPlayers -> Position
 buttonPosition (numPlayersToWord8 -> num) = case num of
   2 -> Position 1
   _ -> Position (num - 2)
 
--- >>> bigBlindPosition 2
+-- | >>> bigBlindPosition TwoPlayers
 -- Position 2
--- >>> (\numPlayers -> positionToTxt numPlayers $ bigBlindPosition numPlayers) <$> [2..9]
+-- >>> (\numPlayers -> positionToTxt numPlayers $ bigBlindPosition numPlayers) <$> enumFromTo TwoPlayers NinePlayers
 -- ["BB","BB","BB","BB","BB","BB","BB","BB"]
 bigBlindPosition :: NumPlayers -> Position
 bigBlindPosition (numPlayersToWord8 -> num) = Position num
 
--- >>> positionToTxt 2 <$> getPostFlopOrder 2
+-- | >>> positionToTxt TwoPlayers <$> getPostFlopOrder TwoPlayers
 -- ["BB","BU"]
--- >>> positionToTxt 3 <$> getPostFlopOrder 3
+-- >>> positionToTxt ThreePlayers <$> getPostFlopOrder ThreePlayers
 -- ["SB","BB","BU"]
--- >>> positionToTxt 6 <$> getPostFlopOrder 6
+-- >>> positionToTxt SixPlayers <$> getPostFlopOrder SixPlayers
 -- ["SB","BB","LJ","HJ","CO","BU"]
--- >>> positionToTxt 9 <$> getPostFlopOrder 9
+-- >>> positionToTxt NinePlayers <$> getPostFlopOrder NinePlayers
 -- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
 getPostFlopOrder :: NumPlayers -> [Position]
 getPostFlopOrder numPlayers@(fromIntegral . numPlayersToWord8 -> num) =

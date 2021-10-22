@@ -22,8 +22,6 @@ module Poker.Cards
     mkPair,
     mkOffsuit,
     mkSuited,
-    unsafeMkSuited,
-    unsafeMkOffsuit,
     allShapedHoles,
     holeToShapedHole,
     Deck (..),
@@ -56,7 +54,6 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
-import GHC.Stack (HasCallStack)
 import Poker.Utils
 import Test.QuickCheck.Arbitrary.Generic (Arbitrary, GenericArbitrary (..))
 
@@ -341,30 +338,20 @@ mkSuited r1 r2 =
     then Just $ if r1 > r2 then UnsafeSuited r1 r2 else UnsafeSuited r2 r1
     else Nothing
 
-unsafeMkSuited :: Rank -> Rank -> ShapedHole
-unsafeMkSuited r1 r2 =
-  fromMaybe (terror $ "Invalid Suited hand: " <> prettyText (r1, r2)) $
-    mkSuited r1 r2
-
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHole
 mkOffsuit r1 r2 =
   if r1 /= r2
     then Just $ if r1 > r2 then UnsafeOffsuit r1 r2 else UnsafeOffsuit r2 r1
     else Nothing
 
-unsafeMkOffsuit :: HasCallStack => Rank -> Rank -> ShapedHole
-unsafeMkOffsuit r1 r2 =
-  fromMaybe (terror $ "Cannot form offsuit hand from: " <> prettyText (r1, r2)) $
-    mkOffsuit r1 r2
-
 allShapedHoles :: [ShapedHole]
 allShapedHoles = reverse $ do
   rank1 <- allRanks
   rank2 <- allRanks
   return $ case compare rank1 rank2 of
-    GT -> unsafeMkSuited rank1 rank2
+    GT -> unsafeSuited rank1 rank2
     EQ -> mkPair rank1
-    LT -> unsafeMkOffsuit rank1 rank2
+    LT -> unsafeOffsuit rank1 rank2
 
 -- | >>> fmap holeToShortTxt . shapedHoleToHoles $ "55p"
 -- ["5d5c","5h5c","5s5c","5h5d","5s5d","5s5h"]
@@ -395,8 +382,8 @@ shapedHoleToHoles = \case
 holeToShapedHole :: Hole -> ShapedHole
 holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1
-  | s1 == s2 = unsafeMkSuited r1 r2
-  | otherwise = unsafeMkOffsuit r1 r2
+  | s1 == s2 = unsafeSuited r1 r2
+  | otherwise = unsafeOffsuit r1 r2
 
 newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
 

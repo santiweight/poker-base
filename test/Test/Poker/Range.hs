@@ -10,7 +10,7 @@ import Test.Hspec
 
 spec_RangefromList :: SpecWith ()
 spec_RangefromList =
-  let m = Range.fromList [(1 :: Int, "bar")]
+  let m = Range.rangeFromList [(1 :: Int, "bar")]
    in it "fromList" $ m `shouldBe` Range (Map.fromList [(1, "bar")])
 
 spec_RangeMonoid :: SpecWith ()
@@ -19,13 +19,13 @@ spec_RangeMonoid = describe "Monoid instance for Range" $ do
     mempty @(Range Int String)
       `shouldBe` Range Map.empty
   it "<> uses <> itemwise" $
-    Range.fromList [(1 :: Int, "foo")]
-      <> Range.fromList [(1, "bar")]
-      `shouldBe` Range.fromList [(1, "foobar")]
+    Range.rangeFromList [(1 :: Int, "foo")]
+      <> Range.rangeFromList [(1, "bar")]
+      `shouldBe` Range.rangeFromList [(1, "foobar")]
   it "empty items are not lost" $
-    Range.fromList [(1 :: Int, "foo")]
-      <> Range.fromList [(2, "bar")]
-      `shouldBe` Range.fromList [(1, "foo"), (2, "bar")]
+    Range.rangeFromList [(1 :: Int, "foo")]
+      <> Range.rangeFromList [(2, "bar")]
+      `shouldBe` Range.rangeFromList [(1, "foo"), (2, "bar")]
 
 spec_FreqMonoid :: SpecWith ()
 spec_FreqMonoid = describe "Freq Monoid instance" $ do

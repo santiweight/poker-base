@@ -281,7 +281,7 @@ spec_all = do
     allCardsExpected = liftA2 Card allRanks allSuits
 
 spec_freshDeck :: SpecWith ()
-spec_freshDeck = it "freshDeck" $ freshDeck `shouldBe` unsafeMkDeck allCards
+spec_freshDeck = it "freshDeck" $ freshDeck `shouldBe` unsafeDeck allCards
 
 -- Check that a call to IsString fails for the given type. Values are forced via
 -- value's Show instance

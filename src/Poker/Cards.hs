@@ -11,10 +11,9 @@ module Poker.Cards
     suitFromUnicode,
     Card (..),
     allCards,
-    Hole (..),
+    Hole,
     pattern Hole,
     mkHole,
-    unsafeMkHole,
     allHoles,
     ShapedHole (Pair),
     pattern Offsuit,
@@ -24,10 +23,10 @@ module Poker.Cards
     mkSuited,
     allShapedHoles,
     holeToShapedHole,
-    Deck (..),
+    Deck,
     pattern Deck,
     freshDeck,
-    unsafeMkDeck,
+    unsafeDeck,
     shapedHoleToHoles,
     rankToChr,
     chrToRank,
@@ -37,17 +36,19 @@ module Poker.Cards
     cardFromShortTxt,
     shapedHoleToShortTxt,
     holeToShortTxt,
-  unsafeOffsuit,unsafeSuited)
+    unsafeOffsuit,
+    unsafeSuited,
+    unsafeHole,
+    holeFromShortTxt,
+  )
 where
 
-import Control.Monad (join, liftM2)
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
 import Prettyprinter.Internal ( unsafeTextWithoutNewlines, Doc(Char) )
 #else
 import           Data.Text.Prettyprint.Doc.Internal
 #endif
-
 import Data.Bifunctor (Bifunctor (second))
 import Data.Maybe
 import Data.String (IsString (fromString))
@@ -55,7 +56,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Poker.Utils
-import Test.QuickCheck.Arbitrary.Generic (Arbitrary, GenericArbitrary (..))
+import Test.QuickCheck.Arbitrary.Generic (GenericArbitrary (..))
+import Control.Applicative
+import Control.Monad
+import Test.QuickCheck (Arbitrary(arbitrary), elements)
 
 -- | The 'Rank' of a playing 'Card'
 data Rank
@@ -130,6 +134,8 @@ data Suit = Club | Diamond | Heart | Spade
   deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
   deriving (Arbitrary) via GenericArbitrary Suit
 
+-- | >>> pretty allSuits
+-- [c, d, h, s]
 instance Pretty Suit where
   pretty = Char . suitToChr
 
@@ -193,19 +199,27 @@ data Card = Card
   deriving (Eq, Ord, Show, Read, Generic)
   deriving (Arbitrary) via GenericArbitrary Card
 
+-- | >>> pretty ("Ac" :: Card)
+-- Ac
 instance Pretty Card where
-  pretty Card {rank = r, suit = s} = pretty r <> pretty s
+  pretty c = unsafeTextWithoutNewlines $ cardToShortTxt c
 
 instance IsString Card where
   fromString = fromJust . cardFromShortTxt . T.pack
 
--- | All cards in deck
+-- | All cards in a 'Deck'
 allCards :: [Card]
-allCards = liftM2 Card allRanks allSuits
+allCards = liftA2 Card allRanks allSuits
 
+-- | >>> cardToShortTxt "Ac"
+-- "Ac"
 cardToShortTxt :: Card -> Text
 cardToShortTxt (Card r s) = T.pack [rankToChr r, suitToChr s]
 
+-- | >>> cardFromShortTxt "Ac"
+-- Just (Card {rank = Ace, suit = Club})
+-- prop> \c -> cardFromShortTxt (cardToShortTxt c) == Just c
+-- +++ OK, passed 100 tests.
 cardFromShortTxt :: Text -> Maybe Card
 cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   Just (r, Just (s, T.null -> True)) -> Card <$> chrToRank r <*> chrToSuit s
@@ -214,19 +228,23 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
 data Hole = UnsafeHole !Card !Card
   deriving (Eq, Ord, Show, Read, Generic)
-  deriving (Arbitrary) via GenericArbitrary Hole
 
 {-# COMPLETE Hole #-}
 
 pattern Hole :: Card -> Card -> Hole
 pattern Hole c1 c2 <- UnsafeHole c1 c2
 
+-- | Unsafely creates a new 'Hole'. The two input 'Card's are expected to be
+-- unique, and the first 'Card' should be less than the second 'Card' (as defined by
+-- 'Ord'). See 'mkHole' for a safe way to create a 'Hole'.
+unsafeHole :: Card -> Card -> Hole
+unsafeHole = UnsafeHole
+
+-- | >>> "AcKd" :: Hole
+-- UnsafeHole (Card {rank = Ace, suit = Club}) (Card {rank = King, suit = Diamond})
 instance IsString Hole where
-  fromString str = case str of
-    [r1, s1, r2, s2] ->
-      fromMaybe invalidHole . join $
-        mkHole <$> (cardFromShortTxt . T.pack) [r1, s1] <*> (cardFromShortTxt . T.pack) [r2, s2]
-    _ -> invalidHole
+  fromString str =
+    fromMaybe invalidHole . holeFromShortTxt $ T.pack str
     where
       invalidHole = error $ "Invalid Hole: " <> str
 
@@ -235,8 +253,23 @@ instance IsString Hole where
 instance Pretty Hole where
   pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
+instance Arbitrary Hole where
+  arbitrary = elements allHoles
+
+-- | >>> holeToShortTxt "AcKd"
+-- "AcKd"
 holeToShortTxt :: Hole -> Text
 holeToShortTxt (Hole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
+
+-- | >>> holeFromShortTxt "AcKd"
+-- Just (UnsafeHole (Card {rank = Ace, suit = Club}) (Card {rank = King, suit = Diamond}))
+-- | >>> ("KdAc" :: Hole) == "AcKd"
+-- True
+-- TODO prop> \h -> holeFromShortTxt (holeToShortTxt h) == Just h
+holeFromShortTxt :: Text -> Maybe Hole
+holeFromShortTxt (T.splitAt 2 -> (c1, T.splitAt 2 -> (c2, T.unpack -> []))) =
+  join $ mkHole <$> cardFromShortTxt c1 <*> cardFromShortTxt c2
+holeFromShortTxt _ = Nothing
 
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
 -- Note that the internal representation of 'Hole' is normalised:
@@ -249,12 +282,6 @@ mkHole c1 c2 =
     then Just $ if c1 > c2 then UnsafeHole c1 c2 else UnsafeHole c2 c1
     else Nothing
 
--- | Unsafely creates a new 'Hole'. The two input 'Card's are expected to be
--- unique, and the first 'Card' should be less than the second 'Card' (as defined by
--- 'Ord'). See 'mkHole' for a safe way to create 'Hole's.
-unsafeMkHole :: Card -> Card -> Hole
-unsafeMkHole = UnsafeHole
-
 allHoles :: [Hole]
 allHoles = reverse $ do
   r1 <- allRanks
@@ -262,19 +289,12 @@ allHoles = reverse $ do
   (s1, s2) <-
     if r1 == r2
       then [(s1, s2) | s1 <- allSuits, s2 <- drop 1 (enumFrom s1)]
-      else liftM2 (,) allSuits allSuits
-  pure $ unsafeMkHole (Card r1 s1) (Card r2 s2)
+      else liftA2 (,) allSuits allSuits
+  pure $ unsafeHole (Card r1 s1) (Card r2 s2)
 
 -- | A 'ShapedHole' is the 'Suit'-normalised representation of a
 -- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
 -- to as "King-5 offsuit".
---
--- >>> shapedHoleToShortTxt $ mkPair Two
--- "22p"
---
--- pair : 22p
--- offsuit : 24o
--- suited : 24s
 --
 -- >>> "22p" :: ShapedHole
 -- Pair Two
@@ -284,7 +304,6 @@ allHoles = reverse $ do
 -- UnsafeSuited King Jack
 data ShapedHole = Pair !Rank | UnsafeOffsuit !Rank !Rank | UnsafeSuited !Rank !Rank
   deriving (Eq, Ord, Show, Read, Generic)
-  deriving (Arbitrary) via GenericArbitrary ShapedHole
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 
@@ -294,9 +313,11 @@ pattern Offsuit r1 r2 <- UnsafeOffsuit r1 r2
 pattern Suited :: Rank -> Rank -> ShapedHole
 pattern Suited r1 r2 <- UnsafeSuited r1 r2
 
+-- | First 'Rank' should be greater than second 'Rank' (according to 'Ord')
 unsafeOffsuit :: Rank -> Rank -> ShapedHole
 unsafeOffsuit = UnsafeOffsuit
 
+-- | First 'Rank' should be greater than second 'Rank' (according to 'Ord')
 unsafeSuited :: Rank -> Rank -> ShapedHole
 unsafeSuited = UnsafeSuited
 
@@ -318,6 +339,9 @@ instance IsString ShapedHole where
 instance Pretty ShapedHole where
   pretty = pretty . shapedHoleToShortTxt
 
+instance Arbitrary ShapedHole where
+  arbitrary = elements allShapedHoles
+
 -- | >>> shapedHoleToShortTxt (mkPair Ace)
 -- "AAp"
 -- >>> shapedHoleToShortTxt <$> (mkOffsuit Ace King)
@@ -332,12 +356,22 @@ shapedHoleToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 mkPair :: Rank -> ShapedHole
 mkPair = Pair
 
+-- | Returns a suited 'ShapedHole' if the incoming 'Rank's are unique, else 'Nothing'.
+-- Note that the internal representation of 'ShapedHole' is normalised:
+--
+-- prop> \r1 r2 -> mkSuited r1 r2 == mkSuited r2 r1
+-- +++ OK, passed 100 tests.
 mkSuited :: Rank -> Rank -> Maybe ShapedHole
 mkSuited r1 r2 =
   if r1 /= r2
     then Just $ if r1 > r2 then UnsafeSuited r1 r2 else UnsafeSuited r2 r1
     else Nothing
 
+-- | Returns an offsuit 'ShapedHole' if the incoming 'Rank's are unique, else 'Nothing'.
+-- Note that the internal representation of 'ShapedHole' is normalised:
+--
+-- prop> \r1 r2 -> mkOffsuit r1 r2 == mkOffsuit r2 r1
+-- +++ OK, passed 100 tests.
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHole
 mkOffsuit r1 r2 =
   if r1 /= r2
@@ -399,5 +433,5 @@ freshDeck :: Deck
 freshDeck = UnsafeMkDeck allCards
 
 -- | The input cards are not checked in any way.
-unsafeMkDeck :: [Card] -> Deck
-unsafeMkDeck = UnsafeMkDeck
+unsafeDeck :: [Card] -> Deck
+unsafeDeck = UnsafeMkDeck

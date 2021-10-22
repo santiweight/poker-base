@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
+-- | A range of Hole cards.
 module Poker.Range
   ( Freq (..),
     Range (..),
@@ -17,15 +18,16 @@ import qualified Data.Map.Strict as Map
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter
 #else
-import           Data.Text.Prettyprint.Doc      ( (<+>)
-                                                , Pretty(pretty)
-                                                , colon
-                                                , comma
-                                                , concatWith
-                                                , lbrace
-                                                , rbrace
-                                                , surround
-                                                )
+import Data.Text.Prettyprint.Doc
+  ( (<+>)
+    Pretty(pretty),
+    colon,
+    comma,
+    concatWith,
+    lbrace,
+    rbrace,
+    surround,
+ )
 #endif
 import Poker.Cards
 
@@ -60,6 +62,7 @@ newtype Range a b = Range
   {_range :: Map a b}
   deriving (Read, Eq, Show)
 
+-- | MAke a Range form a list.
 rangeFromList :: Ord a => [(a, b)] -> Range a b
 rangeFromList = Range . Map.fromList
 
@@ -87,10 +90,12 @@ getDecisionFreqRange ::
 getDecisionFreqRange p (Range m) =
   Range $ Map.map (foldMap (\v -> Freq (bool 0 1 $ p v) 1)) m
 
+-- | Convert from a Range of hole cards to a Range of shaped hole cards.
 holdingRangeToShapedRange :: Monoid v => Range Hole v -> Range ShapedHole v
 holdingRangeToShapedRange (Range r) =
   Range $ Map.mapKeysWith (<>) holeToShapedHole r
 
+-- | Add a singleton Hole hand to a Range of shaped hole cards.
 addHoleToShapedRange :: Num a => a -> Hole -> Range ShapedHole a -> Range ShapedHole a
 addHoleToShapedRange n comb (Range r) =
   Range $ Map.alter (pure . maybe 0 (+ n)) (holeToShapedHole comb) r

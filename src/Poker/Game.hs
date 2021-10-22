@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Representation of a game of holdem, including table structure, positioning, pot and betting state.
 module Poker.Game
   ( Position (..),
     NumPlayers (..),
@@ -36,6 +37,8 @@ newtype Position = Position Word8
 instance Pretty Position where
   pretty = viaShow
 
+-- | Number of players at a Table.
+--
 -- TODO fromIntegral should not allow construction of unsupport table size
 -- TODO could be an enum? HeadsUp | Three | Four
 -- TODO could be a ranged natural?
@@ -51,6 +54,7 @@ data NumPlayers
   | NinePlayers
   deriving (Enum, Eq, Ord)
 
+-- | Convert from NumPlayers to a Word8
 numPlayersToWord8 :: NumPlayers -> Word8
 numPlayersToWord8 TwoPlayers = 2
 numPlayersToWord8 ThreePlayers = 3
@@ -61,6 +65,7 @@ numPlayersToWord8 SevenPlayers = 7
 numPlayersToWord8 EightPlayers = 8
 numPlayersToWord8 NinePlayers = 9
 
+-- | Convert from a Word8 to NumPlayers
 numPlayersFromWord8 :: Word8 -> Maybe NumPlayers
 numPlayersFromWord8 2 = Just TwoPlayers
 numPlayersFromWord8 3 = Just ThreePlayers
@@ -159,14 +164,18 @@ sortPostflop num ps = filter (`elem` ps) $ getPostFlopOrder num
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)
 
+-- | Player position at a table.
 newtype Seat = Seat {_unSeat :: Int} deriving (Read, Show, Eq, Ord, Num)
 
+-- | Bets on the Table
 newtype Pot b = Pot {_unPot :: b}
   deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup, Monoid)
 
+-- | Player stacks not having been bet.
 newtype Stack b = Stack {_unStack :: b}
   deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup)
 
+-- | The state of a game with respect to cards turned and betting rounds.
 data Board where
   RiverBoard :: !Card -> !Board -> Board
   TurnBoard :: !Card -> !Board -> Board
@@ -178,9 +187,11 @@ data Board where
 instance Pretty Board where
   pretty = viaShow
 
+-- | Amount of money needed to join a game.
 newtype Stake b = Stake {unStake :: b}
   deriving (Read, Show, Eq, Functor, Ord, Pretty)
 
+-- | type of bet
 data BetAction t
   = Call !t
   | Raise

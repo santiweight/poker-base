@@ -1,8 +1,10 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | Representation of money, and bet quantities.
 module Poker.Amount
-  ( Amount (unAmount),
+  ( Amount (..),
     pattern Amount,
     unsafeMkAmount,
     IsBet (..),
@@ -104,7 +106,7 @@ unsafeMkAmount = UnsafeMkAmount
 --   * the smallest non-zero currency unit for @b@ ('smallestAmount'). For example, for USD the minimum currency amount
 --     is $0.01.
 --
---   * how to 'add' two @b@s. By default, this is the 'Monoid' instance's 'append' for @b@.
+--   * how to 'add' two @b@s. By default, this is the 'Monoid' instance's append for @b@.
 --
 --   * how to 'minus' two @b@s, which may fail (returning 'Nothing'), if the resulting 'Amount' is negative.
 --

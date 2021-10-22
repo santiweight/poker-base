@@ -1,7 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- TODO fix exports
-module Poker.BigBlind (BigBlind (..), bigBlindToDense) where
+-- | Representation of the big blind amount.
+module Poker.BigBlind
+  ( BigBlind (..),
+    bigBlindToDense,
+  ) where
 
 import GHC.Generics (Generic)
 import Money
@@ -24,7 +27,7 @@ type instance CurrencyScale "BB" = UnitScale "BB" "bb"
 -- The small unit of a \"BB\" is a \"bb\", with 100 \"bb\"s in a \"BB\".
 --
 -- TODO include an API for translating from BigBlind to any safe-money currency, given
--- a 'Stake'.
+-- a 'Poker.Game.Stake'.
 --
 -- Calculations in the safe-money package are done with Discrete and Dense
 -- types. Discrete values are used to describe a regular BigBlind value,

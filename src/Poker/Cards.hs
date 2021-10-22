@@ -216,14 +216,14 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   _ -> Nothing
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
-data Hole = MkHole !Card !Card
+data Hole = UnsafeHole !Card !Card
   deriving (Eq, Ord, Show, Read, Generic)
   deriving (Arbitrary) via GenericArbitrary Hole
 
 {-# COMPLETE Hole #-}
 
 pattern Hole :: Card -> Card -> Hole
-pattern Hole c1 c2 <- MkHole c1 c2
+pattern Hole c1 c2 <- UnsafeHole c1 c2
 
 instance IsString Hole where
   fromString str = case str of
@@ -240,7 +240,7 @@ instance Pretty Hole where
   pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
 holeToShortTxt :: Hole -> Text
-holeToShortTxt (MkHole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
+holeToShortTxt (Hole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
 
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
 -- Note that the internal representation of 'Hole' is normalised:
@@ -250,16 +250,14 @@ holeToShortTxt (MkHole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
 mkHole :: Card -> Card -> Maybe Hole
 mkHole c1 c2 =
   if c1 /= c2
-    then Just $ if c1 > c2 then MkHole c1 c2 else MkHole c2 c1
+    then Just $ if c1 > c2 then UnsafeHole c1 c2 else UnsafeHole c2 c1
     else Nothing
 
 -- | Unsafely creates a new 'Hole'. The two input 'Card's are expected to be
 -- unique, and the first 'Card' should be less than the second 'Card' (as defined by
 -- 'Ord'). See 'mkHole' for a safe way to create 'Hole's.
 unsafeMkHole :: Card -> Card -> Hole
-unsafeMkHole c1 c2 =
-  fromMaybe (terror $ "Cannot form a Hole from " <> prettyText (c1, c2)) $
-    mkHole c1 c2
+unsafeMkHole = UnsafeHole
 
 allHoles :: [Hole]
 allHoles = reverse $ do

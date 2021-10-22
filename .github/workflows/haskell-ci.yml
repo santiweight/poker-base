@@ -12,6 +12,7 @@ jobs:
         experimental: [false]
         include:
           - os: windows-latest
+            ghc: '8.10.7'
             experimental: true
     continue-on-error: ${{ matrix.experimental }}
     name: ghc ${{ matrix.ghc }}
@@ -22,11 +23,6 @@ jobs:
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: ${{ matrix.cabal }}
-      - if: ${{ matrix.os == 'windows-latest'}}
-        name: Set window paths
-        run: |
-          echo "CABAL_STORE_DIR=$SYSTEMDRIVE\\SR" >> $GITHUB_ENV
-          echo "CABAL_PKGS_DIR=~\\AppData\\cabal\\packages" >> $GITHUB_ENV
       - if: ${{ matrix.os != 'windows-latest'}}
         name: Set linux/macOS paths
         run: |
@@ -35,7 +31,8 @@ jobs:
       - name: cabal configure
         run: |
           cabal configure --enable-tests --write-ghc-environment-files=always
-      - name: restore cabal cache (or is this save???)
+      - if: ${{ matrix.os != 'windows-latest'}}
+        name: cabal cache (non-windows)
         uses: actions/cache@v2
         env:
           cache-name: cache-cabal
@@ -48,22 +45,25 @@ jobs:
             ${{ matrix.os }}-${{ matrix.ghc }}-bench-${{ hashFiles('cabal.project') }}
             ${{ matrix.os }}-${{ matrix.ghc }}-build-
             ${{ matrix.os }}-${{ matrix.ghc }}
+      - if: ${{ matrix.os == 'windows-latest'}}
+        name: Print versions (windows)
+        run: |
+          [Environment]::GetEnvironmentVariable("Path")
+          cabal --version
+          ghc --version
+          cabal user-config init -a "http-transport: plain-http" -a "store-dir: C:\SR" -f -v3
+      - if: ${{ matrix.os == 'windows-latest'}}
+        name: restore cabal cache (windows)
+        uses: actions/cache@v1
+        with:
+          path: C:\SR
+          key: windows-store-meta
       - name: build
         run: |
           cabal build all --enable-tests --write-ghc-environment-files=always
       - name: test
         run: |
           cabal test all --enable-tests --write-ghc-environment-files=always
-      - name: save cabal cache (or is this restore???)
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-cabal
-        with:
-          path: |
-            ${{ env.CABAL_PKGS_DIR }}
-            ${{ env.CABAL_STORE_DIR }}
-          key: ${{ matrix.os }}-${{ matrix.ghc }}-build-${{ hashFiles('cabal.project') }}
-          restore-keys: |
-            ${{ matrix.os }}-${{ matrix.ghc }}-bench-${{ hashFiles('cabal.project') }}
-            ${{ matrix.os }}-${{ matrix.ghc }}-build-
-            ${{ matrix.os }}-${{ matrix.ghc }}
+      - name: haddock
+        run: |
+          cabal haddock

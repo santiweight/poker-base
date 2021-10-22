@@ -38,7 +38,8 @@ module Poker.Cards
     chrToSuit,
     cardToShortTxt,
     cardFromShortTxt,
-    holeToShortTxt
+    shapedHoleToShortTxt,
+    holeToShortTxt,
   )
 where
 
@@ -176,7 +177,7 @@ suitToUnicode = \case
   Heart -> '♥'
   Spade -> '♠'
 
--- >>> suitFromUnicode <$> ['♣', '♦', '♥', '♠']
+-- | >>> suitFromUnicode <$> ['♣', '♦', '♥', '♠']
 -- [Just Club,Just Diamond,Just Heart,Just Spade]
 -- prop> \s -> suitFromUnicode (suitToUnicode s) == Just s
 -- +++ OK, passed 100 tests.
@@ -219,6 +220,11 @@ data Hole = MkHole !Card !Card
   deriving (Eq, Ord, Show, Read, Generic)
   deriving (Arbitrary) via GenericArbitrary Hole
 
+{-# COMPLETE Hole #-}
+
+pattern Hole :: Card -> Card -> Hole
+pattern Hole c1 c2 <- MkHole c1 c2
+
 instance IsString Hole where
   fromString str = case str of
     [r1, s1, r2, s2] ->
@@ -228,15 +234,13 @@ instance IsString Hole where
     where
       invalidHole = error $ "Invalid Hole: " <> str
 
--- >>> pretty $ Hole (Card Ace Heart) (Card King Spade)
--- AhKs
+-- | >>> pretty <$> mkHole (Card Ace Heart) (Card King Spade)
+-- Just AhKs
 instance Pretty Hole where
   pretty (Hole c1 c2) = pretty c1 <> pretty c2
 
-{-# COMPLETE Hole #-}
-
-pattern Hole :: Card -> Card -> Hole
-pattern Hole c1 c2 <- MkHole c1 c2
+holeToShortTxt :: Hole -> Text
+holeToShortTxt (MkHole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
 
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
 -- Note that the internal representation of 'Hole' is normalised:
@@ -257,25 +261,21 @@ unsafeMkHole c1 c2 =
   fromMaybe (terror $ "Cannot form a Hole from " <> prettyText (c1, c2)) $
     mkHole c1 c2
 
--- | All possible Hold'Em poker 'Hole's
---
--- TODO add tests
 allHoles :: [Hole]
 allHoles = reverse $ do
-  r1 <- enumerate
+  r1 <- allRanks
   r2 <- enumFrom r1
   (s1, s2) <-
     if r1 == r2
-      then [(s1, s2) | s1 <- enumerate, s2 <- drop 1 (enumFrom s1)]
-      else liftM2 (,) enumerate enumerate
+      then [(s1, s2) | s1 <- allSuits, s2 <- drop 1 (enumFrom s1)]
+      else liftM2 (,) allSuits allSuits
   pure $ unsafeMkHole (Card r1 s1) (Card r2 s2)
 
--- |
--- A 'ShapedHole' is the 'Suit'-normalised representation of a
+-- | A 'ShapedHole' is the 'Suit'-normalised representation of a
 -- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
 -- to as "King-5 offsuit".
 --
--- >>> holeToShortTxt $ mkPair Two
+-- >>> shapedHoleToShortTxt $ mkPair Two
 -- "22p"
 --
 -- pair : 22p
@@ -321,12 +321,18 @@ instance IsString ShapedHole where
       invalidShapedHole = error $ "Invalid ShapedHole: " <> str
 
 instance Pretty ShapedHole where
-  pretty = pretty . holeToShortTxt
+  pretty = pretty . shapedHoleToShortTxt
 
-holeToShortTxt :: ShapedHole -> Text
-holeToShortTxt (Offsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
-holeToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
-holeToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
+-- | >>> shapedHoleToShortTxt (mkPair Ace)
+-- "AAp"
+-- >>> shapedHoleToShortTxt <$> (mkOffsuit Ace King)
+-- Just "AKo"
+-- >>> shapedHoleToShortTxt <$> (mkSuited Ace King)
+-- Just "AKs"
+shapedHoleToShortTxt :: ShapedHole -> Text
+shapedHoleToShortTxt (Offsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
+shapedHoleToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
+shapedHoleToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 
 mkPair :: Rank -> ShapedHole
 mkPair = MkPair
@@ -362,12 +368,12 @@ allShapedHoles = reverse $ do
     EQ -> mkPair rank1
     LT -> unsafeMkOffsuit rank1 rank2
 
--- >>> pretty . shapedHoleToHoles $ "55p"
--- [5d5c, 5h5c, 5s5c, 5h5d, 5s5d, 5s5h]
--- >>> pretty . shapedHoleToHoles $ "97o"
--- [9c7d, 9c7h, 9c7s, 9d7c, 9d7h, 9d7s, 9h7c, 9h7d, 9h7s, 9s7c, 9s7d, 9s7h]
--- >>> pretty . shapedHoleToHoles $ "QTs"
--- [QcTc, QdTd, QhTh, QsTs]
+-- | >>> fmap holeToShortTxt . shapedHoleToHoles $ "55p"
+-- ["5d5c","5h5c","5s5c","5h5d","5s5d","5s5h"]
+-- >>> fmap holeToShortTxt . shapedHoleToHoles $ "97o"
+-- ["9c7d","9c7h","9c7s","9d7c","9d7h","9d7s","9h7c","9h7d","9h7s","9s7c","9s7d","9s7h"]
+-- >>> fmap holeToShortTxt . shapedHoleToHoles $ "QTs"
+-- ["QcTc","QdTd","QhTh","QsTs"]
 shapedHoleToHoles :: ShapedHole -> [Hole]
 shapedHoleToHoles = \case
   Pair r -> do
@@ -382,7 +388,12 @@ shapedHoleToHoles = \case
     s <- allSuits
     pure . fromJust $ mkHole (Card r1 s) (Card r2 s)
 
--- TODO needs tests
+-- | >>> holeToShapedHole "AcKd"
+-- MkOffsuit Ace King
+-- >>> holeToShapedHole "AcKc"
+-- MkSuited Ace King
+-- >>> holeToShapedHole "AcAs"
+-- MkPair Ace
 holeToShapedHole :: Hole -> ShapedHole
 holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1

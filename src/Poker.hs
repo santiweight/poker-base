@@ -1,12 +1,12 @@
+{-# LANGUAGE PatternSynonyms #-}
+
+-- | Datatypes and supporting infrastructure for poker computation.
+--
 module Poker
   ( -- * Usage
-
-    --
     -- $usage
 
     -- * Overview
-
-    --
     -- $overview
 
     -- * Cards
@@ -52,8 +52,8 @@ module Poker
 
     -- * Game
     -- $game
-    Position(..),
-    NumPlayers(..),
+    Position (..),
+    NumPlayers (..),
     numPlayersToWord8,
     numPlayersFromWord8,
     mkNumPlayers,
@@ -64,10 +64,10 @@ module Poker
     bigBlindPosition,
     getPostFlopOrder,
     sortPostflop,
-    Seat(..),
-    Pot(..),
-    Stack(..),
-    Stake(..),
+    Seat (..),
+    Pot (..),
+    Stack (..),
+    Stake (..),
 
     -- * Amount
     -- $amount
@@ -76,16 +76,15 @@ module Poker
     unsafeMkAmount,
     IsBet (..),
     mkAmount,
-    BigBlind(..),
+    BigBlind (..),
     bigBlindToDense,
 
     -- * Range
-    Freq(..),
-    Range(..),
+    Freq (..),
+    Range (..),
     getDecisionFreqRange,
     holdingRangeToShapedRange,
     addHoleToShapedRange,
-
   )
 where
 
@@ -95,7 +94,7 @@ import Poker.Cards
 import Poker.Game
 import Poker.Range
 
--- | $usage
+-- $usage
 -- >>> import Poker
 -- >>> h = Hand [Card Ace Club, Card Two Diamond]
 -- >>> pretty h

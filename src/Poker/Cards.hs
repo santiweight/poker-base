@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
+-- | Card types and operators.
 module Poker.Cards
   ( Rank (..),
     allRanks,
@@ -11,11 +13,11 @@ module Poker.Cards
     suitFromUnicode,
     Card (..),
     allCards,
-    Hole,
+    Hole (..),
     pattern Hole,
     mkHole,
     allHoles,
-    ShapedHole (Pair),
+    ShapedHole (..),
     pattern Offsuit,
     pattern Suited,
     mkPair,
@@ -23,7 +25,7 @@ module Poker.Cards
     mkSuited,
     allShapedHoles,
     holeToShapedHole,
-    Deck,
+    Deck (..),
     pattern Deck,
     freshDeck,
     unsafeDeck,
@@ -47,8 +49,10 @@ where
 import Prettyprinter
 import Prettyprinter.Internal ( unsafeTextWithoutNewlines, Doc(Char) )
 #else
-import           Data.Text.Prettyprint.Doc.Internal
+import Data.Text.Prettyprint.Doc.Internal
 #endif
+import Control.Applicative
+import Control.Monad
 import Data.Bifunctor (Bifunctor (second))
 import Data.Maybe
 import Data.String (IsString (fromString))
@@ -56,10 +60,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Poker.Utils
+import Test.QuickCheck (Arbitrary (arbitrary), elements)
 import Test.QuickCheck.Arbitrary.Generic (GenericArbitrary (..))
-import Control.Applicative
-import Control.Monad
-import Test.QuickCheck (Arbitrary(arbitrary), elements)
 
 -- | The 'Rank' of a playing 'Card'
 data Rank
@@ -231,6 +233,7 @@ data Hole = UnsafeHole !Card !Card
 
 {-# COMPLETE Hole #-}
 
+-- | Hole pattern
 pattern Hole :: Card -> Card -> Hole
 pattern Hole c1 c2 <- UnsafeHole c1 c2
 
@@ -282,6 +285,7 @@ mkHole c1 c2 =
     then Just $ if c1 > c2 then UnsafeHole c1 c2 else UnsafeHole c2 c1
     else Nothing
 
+-- | enumerated list of all possible Hole hands.
 allHoles :: [Hole]
 allHoles = reverse $ do
   r1 <- allRanks
@@ -307,9 +311,11 @@ data ShapedHole = Pair !Rank | UnsafeOffsuit !Rank !Rank | UnsafeSuited !Rank !R
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 
+-- | Offsuit pattern (unsafe)
 pattern Offsuit :: Rank -> Rank -> ShapedHole
 pattern Offsuit r1 r2 <- UnsafeOffsuit r1 r2
 
+-- | Suited pattern (unsafe)
 pattern Suited :: Rank -> Rank -> ShapedHole
 pattern Suited r1 r2 <- UnsafeSuited r1 r2
 
@@ -353,6 +359,7 @@ shapedHoleToShortTxt (Offsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.con
 shapedHoleToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
 shapedHoleToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 
+-- | make a Pair
 mkPair :: Rank -> ShapedHole
 mkPair = Pair
 
@@ -378,6 +385,7 @@ mkOffsuit r1 r2 =
     then Just $ if r1 > r2 then UnsafeOffsuit r1 r2 else UnsafeOffsuit r2 r1
     else Nothing
 
+-- | Enumeration of all possible shaped hole cards.
 allShapedHoles :: [ShapedHole]
 allShapedHoles = reverse $ do
   rank1 <- allRanks
@@ -419,10 +427,12 @@ holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | s1 == s2 = unsafeSuited r1 r2
   | otherwise = unsafeOffsuit r1 r2
 
+-- | A list of cards.
 newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
 
 {-# COMPLETE Deck #-}
 
+-- | Deck pattern (unsafe)
 pattern Deck :: [Card] -> Deck
 pattern Deck c1 <- UnsafeMkDeck c1
 

@@ -16,9 +16,8 @@ module Poker.Cards
     mkHole,
     unsafeMkHole,
     allHoles,
-    ShapedHole (..),
+    ShapedHole (Pair),
     pattern Offsuit,
-    pattern Pair,
     pattern Suited,
     mkPair,
     mkOffsuit,
@@ -40,7 +39,7 @@ module Poker.Cards
     cardFromShortTxt,
     shapedHoleToShortTxt,
     holeToShortTxt,
-  )
+  unsafeOffsuit,unsafeSuited)
 where
 
 import Control.Monad (join, liftM2)
@@ -281,27 +280,28 @@ allHoles = reverse $ do
 -- suited : 24s
 --
 -- >>> "22p" :: ShapedHole
--- MkPair Two
+-- Pair Two
 -- >>> "A4o" :: ShapedHole
--- MkOffsuit Ace Four
+-- UnsafeOffsuit Ace Four
 -- >>> "KJs" :: ShapedHole
--- MkSuited King Jack
---
--- TODO Make patterns uni-directional (don't expose constructors)
-data ShapedHole = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
+-- UnsafeSuited King Jack
+data ShapedHole = Pair !Rank | UnsafeOffsuit !Rank !Rank | UnsafeSuited !Rank !Rank
   deriving (Eq, Ord, Show, Read, Generic)
   deriving (Arbitrary) via GenericArbitrary ShapedHole
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 
-pattern Pair :: Rank -> ShapedHole
-pattern Pair r <- MkPair r
-
 pattern Offsuit :: Rank -> Rank -> ShapedHole
-pattern Offsuit r1 r2 <- MkOffsuit r1 r2
+pattern Offsuit r1 r2 <- UnsafeOffsuit r1 r2
 
 pattern Suited :: Rank -> Rank -> ShapedHole
-pattern Suited r1 r2 <- MkSuited r1 r2
+pattern Suited r1 r2 <- UnsafeSuited r1 r2
+
+unsafeOffsuit :: Rank -> Rank -> ShapedHole
+unsafeOffsuit = UnsafeOffsuit
+
+unsafeSuited :: Rank -> Rank -> ShapedHole
+unsafeSuited = UnsafeSuited
 
 instance IsString ShapedHole where
   fromString str = case str of
@@ -333,12 +333,12 @@ shapedHoleToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons
 shapedHoleToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 
 mkPair :: Rank -> ShapedHole
-mkPair = MkPair
+mkPair = Pair
 
 mkSuited :: Rank -> Rank -> Maybe ShapedHole
 mkSuited r1 r2 =
   if r1 /= r2
-    then Just $ if r1 > r2 then MkSuited r1 r2 else MkSuited r2 r1
+    then Just $ if r1 > r2 then UnsafeSuited r1 r2 else UnsafeSuited r2 r1
     else Nothing
 
 unsafeMkSuited :: Rank -> Rank -> ShapedHole
@@ -349,7 +349,7 @@ unsafeMkSuited r1 r2 =
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHole
 mkOffsuit r1 r2 =
   if r1 /= r2
-    then Just $ if r1 > r2 then MkOffsuit r1 r2 else MkOffsuit r2 r1
+    then Just $ if r1 > r2 then UnsafeOffsuit r1 r2 else UnsafeOffsuit r2 r1
     else Nothing
 
 unsafeMkOffsuit :: HasCallStack => Rank -> Rank -> ShapedHole
@@ -387,11 +387,11 @@ shapedHoleToHoles = \case
     pure . fromJust $ mkHole (Card r1 s) (Card r2 s)
 
 -- | >>> holeToShapedHole "AcKd"
--- MkOffsuit Ace King
+-- UnsafeOffsuit Ace King
 -- >>> holeToShapedHole "AcKc"
--- MkSuited Ace King
+-- UnsafeSuited Ace King
 -- >>> holeToShapedHole "AcAs"
--- MkPair Ace
+-- Pair Ace
 holeToShapedHole :: Hole -> ShapedHole
 holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1

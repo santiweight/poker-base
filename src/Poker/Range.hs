@@ -24,7 +24,7 @@ import Poker.Cards
 -- $setup
 -- >>> :set -XTypeApplications
 -- >>> :set -XOverloadedStrings
--- >>> import Poker
+-- >>> import Poker.Cards
 -- >>> import Poker.Range
 
 -- | A frequency is an unevaluated ratio that indicates how often a decision was
@@ -47,7 +47,7 @@ instance Semigroup Freq where
 -- >>> let left = fromList [("55p" :: ShapedHole, Freq 1 3)]
 -- >>> let right = fromList [("55p", Freq 10 32)]
 -- >>> left <> right
--- Range {_range = fromList [(MkPair Five,Freq 11 35)]}
+-- Range {_range = fromList [(Pair Five,Freq 11 35)]}
 newtype Range a b = Range
   {_range :: Map a b}
   deriving (Read, Eq, Show)

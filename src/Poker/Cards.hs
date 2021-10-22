@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Poker.Cards
@@ -37,6 +38,7 @@ module Poker.Cards
     chrToSuit,
     cardToShortTxt,
     cardFromShortTxt,
+    holeToShortTxt
   )
 where
 
@@ -53,8 +55,10 @@ import Data.Maybe
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack)
 import Poker.Utils
+import Test.QuickCheck.Arbitrary.Generic (Arbitrary, GenericArbitrary (..))
 
 -- | The 'Rank' of a playing 'Card'
 data Rank
@@ -71,7 +75,8 @@ data Rank
   | Queen
   | King
   | Ace
-  deriving (Enum, Bounded, Eq, Ord, Show, Read)
+  deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Rank
 
 instance Pretty Rank where
   pretty = unsafeTextWithoutNewlines . T.singleton . rankToChr
@@ -103,7 +108,9 @@ rankToChr = \case
 -- [Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King,Ace]
 -- >>> chrToRank 'f'
 -- Nothing
--- prop> chrToRank (rankToChr r) == Just r
+--
+-- prop> \r -> chrToRank (rankToChr r) == Just r
+-- +++ OK, passed 100 tests.
 chrToRank :: Char -> Maybe Rank
 chrToRank = \case
   '2' -> pure Two
@@ -123,7 +130,8 @@ chrToRank = \case
 
 -- | The 'Suit' of a playing 'Card'
 data Suit = Club | Diamond | Heart | Spade
-  deriving (Enum, Bounded, Eq, Ord, Show, Read)
+  deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Suit
 
 instance Pretty Suit where
   pretty = Char . suitToChr
@@ -146,9 +154,9 @@ suitToChr = \case
 -- [Club,Diamond,Heart,Spade]
 -- >>> chrToSuit '1'
 -- Nothing
--- prop> chrToSuit (suitToChr s) == Just s
--- Variable not in scope: s :: Suit
--- Variable not in scope: s :: Suit
+--
+-- prop> \s -> chrToSuit (suitToChr s) == Just s
+-- +++ OK, passed 100 tests.
 chrToSuit :: Char -> Maybe Suit
 chrToSuit = \case
   'c' -> pure Club
@@ -159,8 +167,8 @@ chrToSuit = \case
 
 -- | >>> suitToUnicode <$> [Club, Diamond, Heart, Spade]
 -- "\9827\9830\9829\9824"
--- >>> fromJust . suitFromUnicode . suitToUnicode <$> [Club, Diamond, Heart, Spade]
--- [Club,Diamond,Heart,Spade]
+-- >>> suitFromUnicode . suitToUnicode <$> [Club, Diamond, Heart, Spade]
+-- [Just Club,Just Diamond,Just Heart,Just Spade]
 suitToUnicode :: Suit -> Char
 suitToUnicode = \case
   Club -> '♣'
@@ -170,6 +178,8 @@ suitToUnicode = \case
 
 -- >>> suitFromUnicode <$> ['♣', '♦', '♥', '♠']
 -- [Just Club,Just Diamond,Just Heart,Just Spade]
+-- prop> \s -> suitFromUnicode (suitToUnicode s) == Just s
+-- +++ OK, passed 100 tests.
 suitFromUnicode :: Char -> Maybe Suit
 suitFromUnicode = \case
   '♣' -> Just Club
@@ -183,7 +193,8 @@ data Card = Card
   { rank :: !Rank,
     suit :: !Suit
   }
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Card
 
 instance Pretty Card where
   pretty Card {rank = r, suit = s} = pretty r <> pretty s
@@ -205,7 +216,8 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
 data Hole = MkHole !Card !Card
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary Hole
 
 instance IsString Hole where
   fromString str = case str of
@@ -229,7 +241,8 @@ pattern Hole c1 c2 <- MkHole c1 c2
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
 -- Note that the internal representation of 'Hole' is normalised:
 --
--- prop> mkHand c1 c2 == mkHand c2 c1
+-- prop> \c1 c2 -> mkHole c1 c2 == mkHole c2 c1
+-- +++ OK, passed 100 tests.
 mkHole :: Card -> Card -> Maybe Hole
 mkHole c1 c2 =
   if c1 /= c2
@@ -262,8 +275,8 @@ allHoles = reverse $ do
 -- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
 -- to as "King-5 offsuit".
 --
--- >>> pretty $ mkPair Two
--- 22p
+-- >>> holeToShortTxt $ mkPair Two
+-- "22p"
 --
 -- pair : 22p
 -- offsuit : 24o
@@ -278,7 +291,8 @@ allHoles = reverse $ do
 --
 -- TODO Make patterns uni-directional (don't expose constructors)
 data ShapedHole = MkPair !Rank | MkOffsuit !Rank !Rank | MkSuited !Rank !Rank
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Arbitrary) via GenericArbitrary ShapedHole
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 
@@ -305,6 +319,14 @@ instance IsString ShapedHole where
     _ -> invalidShapedHole
     where
       invalidShapedHole = error $ "Invalid ShapedHole: " <> str
+
+instance Pretty ShapedHole where
+  pretty = pretty . holeToShortTxt
+
+holeToShortTxt :: ShapedHole -> Text
+holeToShortTxt (Offsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
+holeToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
+holeToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 
 mkPair :: Rank -> ShapedHole
 mkPair = MkPair
@@ -366,11 +388,6 @@ holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1
   | s1 == s2 = unsafeMkSuited r1 r2
   | otherwise = unsafeMkOffsuit r1 r2
-
-instance Pretty ShapedHole where
-  pretty (Offsuit r1 r2) = pretty r1 <> pretty r2 <> "o"
-  pretty (Suited r1 r2) = pretty r1 <> pretty r2 <> "s"
-  pretty (Pair r) = pretty r <> pretty r <> "p"
 
 newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
 

@@ -6,12 +6,9 @@ description:    This package provides datatypes and support for poker computatio
     == Usage
     .
     >>> import Poker
-    .
-    >>> h = Hand [Card Ace Club, Card Two Diamond]
-    .
-    >>> pretty h
-    .
-    >>> Ac2d
+    >>> Just h = mkHole (Card Ace Club) (Card Two Diamond)
+    >>> holeToShortTxt h
+    "Ac2d"
     .
     Please see the README on GitHub at <https://github.com/santiweight/poker-base#readme> for an overview.
 
@@ -31,7 +28,7 @@ tested-with:
    ||  == 8.10.7
    ||  == 9.0.1
 
-extra-doc-files:
+extra-source-files:
     README.md
     ChangeLog.md
 

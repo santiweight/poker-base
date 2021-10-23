@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 -- | Card types and operators.
 module Poker.Cards
@@ -14,19 +13,15 @@ module Poker.Cards
     Card (..),
     allCards,
     Hole (..),
-    pattern Hole,
     mkHole,
     allHoles,
     ShapedHole (..),
-    pattern Offsuit,
-    pattern Suited,
     mkPair,
     mkOffsuit,
     mkSuited,
     allShapedHoles,
     holeToShapedHole,
-    Deck (..),
-    pattern Deck,
+    Deck,
     freshDeck,
     unsafeDeck,
     shapedHoleToHoles,
@@ -63,6 +58,9 @@ import Poker.Utils
 import Test.QuickCheck (Arbitrary (arbitrary), elements)
 import Test.QuickCheck.Arbitrary.Generic (GenericArbitrary (..))
 
+-- $setup
+-- >>> import Test.QuickCheck
+
 -- | The 'Rank' of a playing 'Card'
 data Rank
   = Two
@@ -81,6 +79,8 @@ data Rank
   deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
   deriving (Arbitrary) via GenericArbitrary Rank
 
+-- | >>> pretty <$> allRanks
+-- [2,3,4,5,6,7,8,9,T,J,Q,K,A]
 instance Pretty Rank where
   pretty = unsafeTextWithoutNewlines . T.singleton . rankToChr
 
@@ -109,7 +109,7 @@ rankToChr = \case
 
 -- | >>> map (fromJust . chrToRank) "23456789TJQKA"
 -- [Two,Three,Four,Five,Six,Seven,Eight,Nine,Ten,Jack,Queen,King,Ace]
--- >>> chrToRank 'f'
+-- >>> chrToRank 'x'
 -- Nothing
 --
 -- prop> \r -> chrToRank (rankToChr r) == Just r
@@ -157,7 +157,7 @@ suitToChr = \case
 
 -- | >>> map (fromJust . chrToSuit) "cdhs"
 -- [Club,Diamond,Heart,Spade]
--- >>> chrToSuit '1'
+-- >>> chrToSuit 'x'
 -- Nothing
 --
 -- prop> \s -> chrToSuit (suitToChr s) == Just s
@@ -210,6 +210,8 @@ instance IsString Card where
   fromString = fromJust . cardFromShortTxt . T.pack
 
 -- | All cards in a 'Deck'
+-- >>> length allCards
+-- 52
 allCards :: [Card]
 allCards = liftA2 Card allRanks allSuits
 
@@ -228,18 +230,11 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   _ -> Nothing
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
-data Hole = UnsafeHole !Card !Card
+data Hole = UnsafeHole !Card !Card -- ^ First 'Card' is expected to be '>' the second
   deriving (Eq, Ord, Show, Read, Generic)
 
-{-# COMPLETE Hole #-}
-
--- | Hole pattern
-pattern Hole :: Card -> Card -> Hole
-pattern Hole c1 c2 <- UnsafeHole c1 c2
-
--- | Unsafely creates a new 'Hole'. The two input 'Card's are expected to be
--- unique, and the first 'Card' should be less than the second 'Card' (as defined by
--- 'Ord'). See 'mkHole' for a safe way to create a 'Hole'.
+-- | Unsafely create a new 'Hole'. The first 'Card' should be '>' than the second.
+-- See 'mkHole' for a safe way to create a 'Hole'.
 unsafeHole :: Card -> Card -> Hole
 unsafeHole = UnsafeHole
 
@@ -254,38 +249,51 @@ instance IsString Hole where
 -- | >>> pretty <$> mkHole (Card Ace Heart) (Card King Spade)
 -- Just AhKs
 instance Pretty Hole where
-  pretty (Hole c1 c2) = pretty c1 <> pretty c2
+  pretty (UnsafeHole c1 c2) = pretty c1 <> pretty c2
 
+-- | The 'Arbitrary' instance for 'Hole' generates values whose 'Card' members
+-- are already normalised.
 instance Arbitrary Hole where
   arbitrary = elements allHoles
 
 -- | >>> holeToShortTxt "AcKd"
 -- "AcKd"
 holeToShortTxt :: Hole -> Text
-holeToShortTxt (Hole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
+holeToShortTxt (UnsafeHole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
 
 -- | >>> holeFromShortTxt "AcKd"
 -- Just (UnsafeHole (Card {rank = Ace, suit = Club}) (Card {rank = King, suit = Diamond}))
--- | >>> ("KdAc" :: Hole) == "AcKd"
+-- >>> ("KdAc" :: Hole) == "AcKd"
 -- True
--- TODO prop> \h -> holeFromShortTxt (holeToShortTxt h) == Just h
+-- prop> \h -> holeFromShortTxt (holeToShortTxt h) == Just h
+-- +++ OK, passed 100 tests.
 holeFromShortTxt :: Text -> Maybe Hole
 holeFromShortTxt (T.splitAt 2 -> (c1, T.splitAt 2 -> (c2, T.unpack -> []))) =
   join $ mkHole <$> cardFromShortTxt c1 <*> cardFromShortTxt c2
 holeFromShortTxt _ = Nothing
 
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
--- Note that the internal representation of 'Hole' is normalised:
+-- Note that 'mkCard' automatically normalises the order of the given 'Card'. See 'Hole' for details.
 --
 -- prop> \c1 c2 -> mkHole c1 c2 == mkHole c2 c1
 -- +++ OK, passed 100 tests.
+-- prop> \c1 c2 -> (c1 /= c2) ==> isJust (mkHole c1 c2)
+-- +++ OK, passed 100 tests; 2 discarded.
 mkHole :: Card -> Card -> Maybe Hole
 mkHole c1 c2 =
   if c1 /= c2
     then Just $ if c1 > c2 then UnsafeHole c1 c2 else UnsafeHole c2 c1
     else Nothing
 
--- | enumerated list of all possible Hole hands.
+-- | All possible valid 'Hole's (the 'Hole's are also normalised).
+-- >>> length allCards * length allCards
+-- 2704
+-- >>> length allHoles
+-- 1326
+-- >>> Data.List.nub allHoles == allHoles
+-- True
+-- >>> pretty $ take 10 allHoles
+-- [AsAh, AsAd, AhAd, AsAc, AhAc, AdAc, AsKs, AhKs, AdKs, AcKs]
 allHoles :: [Hole]
 allHoles = reverse $ do
   r1 <- allRanks
@@ -294,11 +302,13 @@ allHoles = reverse $ do
     if r1 == r2
       then [(s1, s2) | s1 <- allSuits, s2 <- drop 1 (enumFrom s1)]
       else liftA2 (,) allSuits allSuits
-  pure $ unsafeHole (Card r1 s1) (Card r2 s2)
+  pure $ unsafeHole (Card r2 s2) (Card r1 s1)
 
 -- | A 'ShapedHole' is the 'Suit'-normalised representation of a
 -- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
 -- to as "King-5 offsuit".
+--
+-- To construct a 'ShapedHole', see 'mkPair', 'mkOffsuit', and mkSuited'.
 --
 -- >>> "22p" :: ShapedHole
 -- Pair Two
@@ -306,27 +316,28 @@ allHoles = reverse $ do
 -- UnsafeOffsuit Ace Four
 -- >>> "KJs" :: ShapedHole
 -- UnsafeSuited King Jack
-data ShapedHole = Pair !Rank | UnsafeOffsuit !Rank !Rank | UnsafeSuited !Rank !Rank
+data ShapedHole
+  = Pair !Rank
+  | UnsafeOffsuit !Rank !Rank -- ^ First 'Rank' should be '>' the second
+  | UnsafeSuited !Rank !Rank -- ^ First 'Rank' should be '>' the second
   deriving (Eq, Ord, Show, Read, Generic)
 
-{-# COMPLETE Pair, Offsuit, Suited #-}
-
--- | Offsuit pattern (unsafe)
-pattern Offsuit :: Rank -> Rank -> ShapedHole
-pattern Offsuit r1 r2 <- UnsafeOffsuit r1 r2
-
--- | Suited pattern (unsafe)
-pattern Suited :: Rank -> Rank -> ShapedHole
-pattern Suited r1 r2 <- UnsafeSuited r1 r2
-
--- | First 'Rank' should be greater than second 'Rank' (according to 'Ord')
+-- | First 'Rank' should '>' than second 'Rank'
 unsafeOffsuit :: Rank -> Rank -> ShapedHole
 unsafeOffsuit = UnsafeOffsuit
 
--- | First 'Rank' should be greater than second 'Rank' (according to 'Ord')
+-- | First 'Rank' should be '>' than second 'Rank'
 unsafeSuited :: Rank -> Rank -> ShapedHole
 unsafeSuited = UnsafeSuited
 
+-- | >>> "AKs" :: ShapedHole
+-- UnsafeSuited Ace King
+-- >>> "AKo" :: ShapedHole
+-- UnsafeOffsuit Ace King
+-- >>> "AAp" :: ShapedHole
+-- Pair Ace
+-- >>> "KAs" == ("AKs" :: ShapedHole)
+-- True
 instance IsString ShapedHole where
   fromString str = case str of
     [r1, r2, s] ->
@@ -342,9 +353,13 @@ instance IsString ShapedHole where
     where
       invalidShapedHole = error $ "Invalid ShapedHole: " <> str
 
+-- | >>> pretty $ take 10 allShapedHoles
+-- [AAp, AKs, AQs, AJs, ATs, A9s, A8s, A7s, A6s, A5s]
 instance Pretty ShapedHole where
   pretty = pretty . shapedHoleToShortTxt
 
+-- | The 'Arbitrary' instance for 'ShapedHole' generates values whose 'Rank' members
+-- are already normalised.
 instance Arbitrary ShapedHole where
   arbitrary = elements allShapedHoles
 
@@ -355,16 +370,16 @@ instance Arbitrary ShapedHole where
 -- >>> shapedHoleToShortTxt <$> (mkSuited Ace King)
 -- Just "AKs"
 shapedHoleToShortTxt :: ShapedHole -> Text
-shapedHoleToShortTxt (Offsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
-shapedHoleToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
+shapedHoleToShortTxt (UnsafeOffsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
+shapedHoleToShortTxt (UnsafeSuited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
 shapedHoleToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 
--- | make a Pair
+-- | Build a pair 'ShapedHole' from the given 'Rank'
 mkPair :: Rank -> ShapedHole
 mkPair = Pair
 
 -- | Returns a suited 'ShapedHole' if the incoming 'Rank's are unique, else 'Nothing'.
--- Note that the internal representation of 'ShapedHole' is normalised:
+-- Note that 'mkSuited' normalises the order of the incoming 'Rank's.
 --
 -- prop> \r1 r2 -> mkSuited r1 r2 == mkSuited r2 r1
 -- +++ OK, passed 100 tests.
@@ -385,7 +400,12 @@ mkOffsuit r1 r2 =
     then Just $ if r1 > r2 then UnsafeOffsuit r1 r2 else UnsafeOffsuit r2 r1
     else Nothing
 
--- | Enumeration of all possible shaped hole cards.
+-- | >>> length allShapedHoles
+-- 169
+-- >>> Data.List.nub allShapedHoles == allShapedHoles
+-- True
+-- >>> pretty $ take 15 allShapedHoles
+-- [AAp, AKs, AQs, AJs, ATs, A9s, A8s, A7s, A6s, A5s, A4s, A3s, A2s, AKo, KKp]
 allShapedHoles :: [ShapedHole]
 allShapedHoles = reverse $ do
   rank1 <- allRanks
@@ -393,7 +413,7 @@ allShapedHoles = reverse $ do
   return $ case compare rank1 rank2 of
     GT -> unsafeSuited rank1 rank2
     EQ -> mkPair rank1
-    LT -> unsafeOffsuit rank1 rank2
+    LT -> unsafeOffsuit rank2 rank1
 
 -- | >>> fmap holeToShortTxt . shapedHoleToHoles $ "55p"
 -- ["5d5c","5h5c","5s5c","5h5d","5s5d","5s5h"]
@@ -407,11 +427,11 @@ shapedHoleToHoles = \case
     s1 <- allSuits
     s2 <- drop (fromEnum s1 + 1) allSuits
     pure . fromJust $ mkHole (Card r s1) (Card r s2)
-  Offsuit r1 r2 -> do
+  UnsafeOffsuit r1 r2 -> do
     s1 <- allSuits
     s2 <- filter (s1 /=) allSuits
     pure . fromJust $ mkHole (Card r1 s1) (Card r2 s2)
-  Suited r1 r2 -> do
+  UnsafeSuited r1 r2 -> do
     s <- allSuits
     pure . fromJust $ mkHole (Card r1 s) (Card r2 s)
 
@@ -422,26 +442,20 @@ shapedHoleToHoles = \case
 -- >>> holeToShapedHole "AcAs"
 -- Pair Ace
 holeToShapedHole :: Hole -> ShapedHole
-holeToShapedHole (Hole (Card r1 s1) (Card r2 s2))
+holeToShapedHole (UnsafeHole (Card r1 s1) (Card r2 s2))
   | r1 == r2 = mkPair r1
   | s1 == s2 = unsafeSuited r1 r2
   | otherwise = unsafeOffsuit r1 r2
 
--- | A list of cards.
-newtype Deck = UnsafeMkDeck [Card] deriving (Read, Show, Eq)
+-- | A 'Deck' of 'Card's
+newtype Deck = UnsafeDeck [Card] deriving (Read, Show, Eq)
 
-{-# COMPLETE Deck #-}
-
--- | Deck pattern (unsafe)
-pattern Deck :: [Card] -> Deck
-pattern Deck c1 <- UnsafeMkDeck c1
-
--- | A full deck with all cards
---
--- TODO use template haskell to evaluate at compile time
+-- | A unshuffled 'Deck' with all 'Card's
+-- >>> freshDeck == unsafeDeck allCards
+-- True
 freshDeck :: Deck
-freshDeck = UnsafeMkDeck allCards
+freshDeck = UnsafeDeck allCards
 
--- | The input cards are not checked in any way.
+-- | The input 'Card's are not checked in any way.
 unsafeDeck :: [Card] -> Deck
-unsafeDeck = UnsafeMkDeck
+unsafeDeck = UnsafeDeck

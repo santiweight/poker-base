@@ -27,22 +27,17 @@ import Data.Word (Word8)
 import Poker.Cards
 import Prettyprinter
 
--- | A player's position in a game of poker.
+-- | A player's 'Position' in a game of poker.
 --
--- Future iterations of this library will use a safer/less-hacky representation
--- for 'Position'
+-- The API for 'Position' is mildly unstable. We are open to better ideas :)
 newtype Position = Position Word8
   deriving (Read, Show, Enum, Bounded, Eq, Ord, Data, Typeable)
 
 instance Pretty Position where
   pretty = viaShow
 
--- | Number of players at a Table.
---
--- TODO fromIntegral should not allow construction of unsupport table size
--- TODO could be an enum? HeadsUp | Three | Four
--- TODO could be a ranged natural?
--- TODO name choice? TableSize?
+-- | Number of active players at a poker table. Players sitting out do not count, as
+-- they do not contribute to the number of 'Position's.
 data NumPlayers
   = TwoPlayers
   | ThreePlayers
@@ -54,7 +49,7 @@ data NumPlayers
   | NinePlayers
   deriving (Enum, Eq, Ord)
 
--- | Convert from NumPlayers to a Word8
+-- | Convert a 'NumPlayers' to a 'Word8'.
 numPlayersToWord8 :: NumPlayers -> Word8
 numPlayersToWord8 TwoPlayers = 2
 numPlayersToWord8 ThreePlayers = 3
@@ -65,7 +60,7 @@ numPlayersToWord8 SevenPlayers = 7
 numPlayersToWord8 EightPlayers = 8
 numPlayersToWord8 NinePlayers = 9
 
--- | Convert from a Word8 to NumPlayers
+-- | Convert a 'Word8' to a 'NumPlayers'.
 numPlayersFromWord8 :: Word8 -> Maybe NumPlayers
 numPlayersFromWord8 2 = Just TwoPlayers
 numPlayersFromWord8 3 = Just ThreePlayers
@@ -82,8 +77,8 @@ mkNumPlayers :: Integral a => a -> Maybe NumPlayers
 mkNumPlayers num | num >= 2 && num <= 9 = numPlayersFromWord8 $ fromIntegral num
 mkNumPlayers _ = Nothing
 
--- | 'Position's are ordered by table order. The first position in the list
--- is the first player to act preflop. The last position in the list is always
+-- | 'Position's are ordered by table order (clockwise). The first 'Position' in the list
+-- is the first player to act preflop. The last 'Position' in the list is always
 -- the big blind.
 -- >>> allPositions SixPlayers
 -- [Position 1,Position 2,Position 3,Position 4,Position 5,Position 6]
@@ -96,9 +91,6 @@ allPositions (numPlayersToWord8 -> num) = Position <$> [1 .. num]
 -- ["LJ","HJ","CO","BU","SB","BB"]
 -- >>> positionToTxt NinePlayers <$> allPositions NinePlayers
 -- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
---
--- TODO Pre-compute, via TH, Position -> Text maps for each NumPlayers, to avoid
--- extra runtime cost
 positionToTxt :: NumPlayers -> Position -> Text
 positionToTxt (numPlayersToWord8 -> num) (Position pos) =
   let allPositionTexts = ["UTG", "UTG1", "UTG2", "LJ", "HJ", "CO", "BU", "SB", "BB"]
@@ -161,18 +153,20 @@ getPostFlopOrder numPlayers@(fromIntegral . numPlayersToWord8 -> num) =
 sortPostflop :: NumPlayers -> [Position] -> [Position]
 sortPostflop num ps = filter (`elem` ps) $ getPostFlopOrder num
 
+-- | Is a player hero or villain. Hero in poker means that the hand is from
+-- the hero player's perspective.
 data IsHero = Hero | Villain
   deriving (Read, Show, Eq, Ord, Enum, Bounded)
 
--- | Player position at a table.
-newtype Seat = Seat {_unSeat :: Int} deriving (Read, Show, Eq, Ord, Num)
+-- | A player's seat number at a poker table.
+newtype Seat = Seat {_seat :: Int} deriving (Read, Show, Eq, Ord, Num)
 
--- | Bets on the Table
-newtype Pot b = Pot {_unPot :: b}
+-- | Total amount of money in the 'Pot'.
+newtype Pot b = Pot {_pot :: b}
   deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup, Monoid)
 
--- | Player stacks not having been bet.
-newtype Stack b = Stack {_unStack :: b}
+-- | Amount of money in a player's stack (not having been bet).
+newtype Stack b = Stack {_stack :: b}
   deriving (Show, Eq, Ord, Num, Functor, Pretty, Semigroup)
 
 -- | The state of a game with respect to cards turned and betting rounds.
@@ -181,17 +175,16 @@ data Board where
   TurnBoard :: !Card -> !Board -> Board
   FlopBoard :: (Card, Card, Card) -> !Board -> Board
   PreFlopBoard :: !Board -> Board
-  InitialTable :: Board
+  InitialTable :: Board -- ^ Round where post actions occur.
   deriving (Eq, Ord, Show)
 
-instance Pretty Board where
-  pretty = viaShow
-
 -- | Amount of money needed to join a game.
-newtype Stake b = Stake {unStake :: b}
+newtype Stake b = Stake {_stake :: b}
   deriving (Read, Show, Eq, Functor, Ord, Pretty)
 
--- | type of bet
+-- | A bet done a player pre- or post-flop.
+--
+-- WARNING: Unstable API
 data BetAction t
   = Call !t
   | Raise

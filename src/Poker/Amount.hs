@@ -45,7 +45,7 @@ import Data.Text.Prettyprint.Doc (Pretty (pretty), viaShow)
 --
 -- TODO add examples section
 data Amount (b :: Symbol) where
-  UnsafeMkAmount :: (GoodScale (CurrencyScale b), KnownSymbol b) => {unAmount :: Discrete' b (CurrencyScale b)} -> Amount b
+  UnsafeAmount :: (GoodScale (CurrencyScale b), KnownSymbol b) => {unAmount :: Discrete' b (CurrencyScale b)} -> Amount b
 
 deriving instance Show (Amount b)
 
@@ -71,7 +71,7 @@ pattern Amount ::
   (GoodScale (CurrencyScale b), KnownSymbol b) =>
   Discrete' b (CurrencyScale b) ->
   Amount b
-pattern Amount x <- UnsafeMkAmount x
+pattern Amount x <- UnsafeAmount x
 
 -- |
 -- Returns an 'Amount' from a @Discrete\'@ so long as the given @Discrete\'@ is non-negative.
@@ -86,7 +86,7 @@ mkAmount ::
   Discrete' b (CurrencyScale b) ->
   Maybe (Amount b)
 mkAmount (someDiscreteAmount . toSomeDiscrete -> amt)
-  | amt >= 0 = Just $ UnsafeMkAmount $ discrete amt
+  | amt >= 0 = Just $ UnsafeAmount $ discrete amt
   | otherwise = Nothing
 
 -- | Make an 'Amount' from a @Discrete'@. Only use when you are certain that your @Discrete'@ value
@@ -95,7 +95,7 @@ unsafeMkAmount ::
   (GoodScale (CurrencyScale b), KnownSymbol b) =>
   Discrete' b (CurrencyScale b) ->
   Amount b
-unsafeMkAmount = UnsafeMkAmount
+unsafeMkAmount = UnsafeAmount
 
 -- |
 -- A type @b@ satisfies 'IsBet' if we know:
@@ -124,14 +124,14 @@ class (Monoid b, Show b, Ord b) => IsBet b where
 -- since they are implied by the constructor of Amount. However this might require some
 -- work from Richard Eisenberg first...
 instance (GoodScale (CurrencyScale b), KnownSymbol b) => Semigroup (Amount b) where
-  (Amount dis) <> (Amount dis') = UnsafeMkAmount $ dis + dis'
+  (Amount dis) <> (Amount dis') = UnsafeAmount $ dis + dis'
 
 instance (GoodScale (CurrencyScale b), KnownSymbol b) => Monoid (Amount b) where
-  mempty = UnsafeMkAmount $ discrete 0
+  mempty = UnsafeAmount $ discrete 0
 
 instance (GoodScale (CurrencyScale b), KnownSymbol b) => IsBet (Amount b) where
-  smallestAmount = UnsafeMkAmount $ discrete 1 :: Amount b
+  smallestAmount = UnsafeAmount $ discrete 1 :: Amount b
   Amount l `minus` Amount r
     | r > l = Nothing
-    | otherwise = Just $ UnsafeMkAmount $ l - r
-  Amount l `add` Amount r = UnsafeMkAmount $ l + r
+    | otherwise = Just $ UnsafeAmount $ l - r
+  Amount l `add` Amount r = UnsafeAmount $ l + r

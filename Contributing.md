@@ -33,12 +33,12 @@ cd cabal-extras/cabal-docspec
 cabal install cabal-docspec:exe:cabal-docspec --allow-newer --overwrite-policy=always
 ```
 
-The ideal checklist for any PR is:
+## Pull Request checklist
 
-- builds with `cabal build all && cabal test` with no warnings. Feel free to add file pragmas or edit the .cabal file if you think the warning should be ignored.
+- builds with `cabal build all && cabal test` with no warnings. Feel free to add file pragmas or edit the `poker-base.cabal` if you think the warning should be ignored.
 - passes `ormolu --mode check $(git ls-files '*.hs')`.
 - passes `hlint .`
-- passes `cabal-docspec`
+- passes `cabal v2-build && cabal-docspec --check-properties`
 
 If you are requesting a change that adds new functionality or affects behaviour, please:
 
@@ -46,4 +46,3 @@ If you are requesting a change that adds new functionality or affects behaviour,
 - add [tasty](https://hackage.haskell.org/package/tasty) unit tests, including [QuickCheck](https://hackage.haskell.org/package/tasty-quickcheck) properties.
 - include [haddocks](https://haskell-haddock.readthedocs.io/en/latest/) that will be useful for other users.
 - update the change log for non-trivial changes.
-

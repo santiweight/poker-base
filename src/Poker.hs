@@ -1,5 +1,4 @@
 -- | Datatypes and supporting infrastructure for poker computation.
---
 module Poker
   ( -- * Usage
     -- $usage

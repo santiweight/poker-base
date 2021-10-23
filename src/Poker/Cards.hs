@@ -231,7 +231,9 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   _ -> Nothing
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
-data Hole = UnsafeHole !Card !Card -- ^ First 'Card' is expected to be '>' the second
+data Hole
+  = -- | First 'Card' is expected to be '>' the second
+    UnsafeHole !Card !Card
   deriving (Eq, Ord, Show, Read, Generic)
 
 -- | Unsafely create a new 'Hole'. The first 'Card' should be '>' than the second.
@@ -319,8 +321,10 @@ allHoles = reverse $ do
 -- UnsafeSuited King Jack
 data ShapedHole
   = Pair !Rank
-  | UnsafeOffsuit !Rank !Rank -- ^ First 'Rank' should be '>' the second
-  | UnsafeSuited !Rank !Rank -- ^ First 'Rank' should be '>' the second
+  | -- | First 'Rank' should be '>' the second
+    UnsafeOffsuit !Rank !Rank
+  | -- | First 'Rank' should be '>' the second
+    UnsafeSuited !Rank !Rank
   deriving (Eq, Ord, Show, Read, Generic)
 
 -- | First 'Rank' should '>' than second 'Rank'

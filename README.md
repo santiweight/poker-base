@@ -1,21 +1,21 @@
 ## poker-base
 
 [![Hackage](https://img.shields.io/hackage/v/poker-base.svg)](https://hackage.haskell.org/package/poker-base)
-[![Build Status](https://github.com/santiweight/poker-base/workflows/haskell-ci/badge.svg)](https://github.com/santiweight/poker-base/actions?query=workflow%3Ahaskell-ci) [![Hackage Deps](https://img.shields.io/hackage-deps/v/poker-base.svg)](http://packdeps.haskellers.com/reverse/{{name}})
+[![Build Status](https://github.com/santiweight/poker-base/workflows/haskell-ci/badge.svg)](https://github.com/santiweight/poker-base/actions?query=workflow%3Ahaskell-ci)
 
 ## Description
 
-`poker-base` provides basic datatypes and infrastructure to handle poker computation. Once developed, the package intends to be industry-ready and provide capabilities that support poker websites, simulation, research and poker trainers and assistants.
+`poker-base` provides datatypes and supporting infrastructure to handle poker computation. Once developed, the package intends to be industry-ready and provide capabilities that support poker websites, simulation, research and poker trainers and assistants.
 
 Pull requests or suggestions (preferably created in an issue), are not just encouraged but highly requested! We are quick to respond to any help you might need :)
 
 ## Usage
 
 ```
->>> import Poker
->>> h = Hand [Card Ace Club, Card Two Diamond]
->>> pretty h
->>> Ac2d
+-- >>> import Poker
+-- >>> Just h = mkHole (Card Ace Club) (Card Two Diamond)
+-- >>> holeToShortTxt h
+-- "Ac2d"
 ```
 
 ## Goal

@@ -61,6 +61,9 @@ import Poker.Utils
 import Test.QuickCheck (Arbitrary (arbitrary), elements)
 import Test.QuickCheck.Arbitrary.Generic (GenericArbitrary (..))
 
+-- $setup
+-- >>> import Test.QuickCheck
+
 -- | The 'Rank' of a playing 'Card'
 data Rank
   = Two
@@ -228,10 +231,10 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   _ -> Nothing
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
-data Hole = UnsafeHole !Card !Card -- ^ First 'Card' is expected to be '>' the second (according to 'Ord')
+data Hole = UnsafeHole !Card !Card -- ^ First 'Card' is expected to be '>' the second
   deriving (Eq, Ord, Show, Read, Generic)
 
--- | Unsafely create a new 'Hole'. The first 'Card' should be '>' than the second (according to 'Ord').
+-- | Unsafely create a new 'Hole'. The first 'Card' should be '>' than the second
 -- See 'mkHole' for a safe way to create a 'Hole'.
 unsafeHole :: Card -> Card -> Hole
 unsafeHole = UnsafeHole
@@ -268,10 +271,12 @@ holeFromShortTxt (T.splitAt 2 -> (c1, T.splitAt 2 -> (c2, T.unpack -> []))) =
 holeFromShortTxt _ = Nothing
 
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
--- Note that the internal representation of 'Hole' is normalised:
+-- Note that 'mkCard' automatically normalises the order of the given 'Card'. See 'Hole' for details.
 --
 -- prop> \c1 c2 -> mkHole c1 c2 == mkHole c2 c1
 -- +++ OK, passed 100 tests.
+-- prop> \c1 c2 -> (c1 /= c2) ==> isJust (mkHole c1 c2)
+-- +++ OK, passed 100 tests; 2 discarded.
 mkHole :: Card -> Card -> Maybe Hole
 mkHole c1 c2 =
   if c1 /= c2
@@ -301,6 +306,8 @@ allHoles = reverse $ do
 -- poker 'Hole'. For example, the 'Hole' "King of Diamonds, 5 of Hearts" is often referred
 -- to as "King-5 offsuit".
 --
+-- To construct a 'ShapedHole', see 'mkPair', 'mkOffsuit', and mkSuited'.
+--
 -- >>> "22p" :: ShapedHole
 -- Pair Two
 -- >>> "A4o" :: ShapedHole
@@ -309,8 +316,8 @@ allHoles = reverse $ do
 -- UnsafeSuited King Jack
 data ShapedHole
   = Pair !Rank
-  | UnsafeOffsuit !Rank !Rank -- ^ First 'Rank' is expected to be '>' the second
-  | UnsafeSuited !Rank !Rank -- ^ First 'Rank' is expected to be '>' the second
+  | UnsafeOffsuit !Rank !Rank -- ^ First 'Rank' should be '>' the second
+  | UnsafeSuited !Rank !Rank -- ^ First 'Rank' should be '>' the second
   deriving (Eq, Ord, Show, Read, Generic)
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
@@ -376,7 +383,7 @@ mkPair :: Rank -> ShapedHole
 mkPair = Pair
 
 -- | Returns a suited 'ShapedHole' if the incoming 'Rank's are unique, else 'Nothing'.
--- Note that the internal representation of 'ShapedHole' is normalised:
+-- Note that 'mkSuited' normalises the order of the incoming 'Rank's.
 --
 -- prop> \r1 r2 -> mkSuited r1 r2 == mkSuited r2 r1
 -- +++ OK, passed 100 tests.

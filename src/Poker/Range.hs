@@ -58,7 +58,8 @@ rangeFromList = Range . Map.fromList
 instance (Ord a, Monoid b) => Monoid (Range a b) where
   mempty = Range Map.empty
 
--- | >>> let left = rangeFromList [("55p" :: ShapedHole, Freq 1 3)]
+-- |
+-- >>> let left = rangeFromList [("55p" :: ShapedHole, Freq 1 3)]
 -- >>> let right = rangeFromList [("55p", Freq 10 32)]
 -- >>> left <> right
 -- Range {_range = fromList [(Pair Five,Freq 11 35)]}

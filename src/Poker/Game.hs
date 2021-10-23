@@ -149,6 +149,7 @@ getPostFlopOrder numPlayers@(fromIntegral . numPlayersToWord8 -> num) =
     $ allPositions numPlayers
 
 -- | Sort a list of positions acccording to postflop ordering
+--
 -- >>> positionToTxt TwoPlayers <$> sortPostflop TwoPlayers (allPositions TwoPlayers)
 -- ["BB","BU"]
 -- >>> positionToTxt ThreePlayers <$> sortPostflop ThreePlayers (allPositions ThreePlayers)

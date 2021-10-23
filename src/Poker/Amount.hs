@@ -4,7 +4,7 @@
 -- | Representation of money, and bet quantities.
 module Poker.Amount
   ( Amount (..),
-    unsafeMkAmount,
+    unsafeAmount,
     IsBet (..),
     mkAmount,
     bigBlindToDense,
@@ -29,19 +29,18 @@ import Data.Text.Prettyprint.Doc (Pretty (pretty), viaShow)
 -- >>> :set -XDataKinds
 -- >>> import Prettyprinter
 
--- |
--- 'Amount' is the type used to represent amounts of money during a game of poker.
+-- | 'Amount' is the type used to represent amounts of money during a game of poker.
 -- The internal representation of 'Amount' is a @Discrete\'@ from the
 -- <https://hackage.haskell.org/package/safe-money safe-money> package.
 -- The exposed constructors for 'Amount' ensure that no 'Amount' can have a negative value.
 --
--- The use of the safe-money package allows for lossless conversion between currencies with
+-- The use of the @safe-money@ package allows for lossless conversion between currencies with
 -- well-maintained support for type safety, serialisation, and currency conversions.
 --
 -- @
 -- \{\-\# Language TypeApplications \#\-\}
 --
--- case 'unsafeMkAmount' @\"USD\" ('discrete' 100) of
+-- case 'unsafeAmount' @\"USD\" ('discrete' 100) of
 --   'UnsafeAmount' x -> x     -- x == discrete 100
 -- @
 data Amount (b :: Symbol) where
@@ -57,11 +56,8 @@ instance Pretty (Amount b) where
   pretty = viaShow
 
 -- |
-
--- |
 -- Returns an 'Amount' from a @Discrete\'@ so long as the given @Discrete\'@ is non-negative.
 --
--- @
 -- >>> mkAmount @"USD" 0
 -- Just (UnsafeAmount {unAmount = Discrete "USD" 100%1 0})
 -- >>> mkAmount @"USD" (-1)
@@ -76,11 +72,11 @@ mkAmount (someDiscreteAmount . toSomeDiscrete -> amt)
 
 -- | Make an 'Amount' from a @Discrete'@. Only use when you are certain that your @Discrete'@ value
 -- is positive, since most usages of 'Amount' will break for negative quantities.
-unsafeMkAmount ::
+unsafeAmount ::
   (GoodScale (CurrencyScale b), KnownSymbol b) =>
   Discrete' b (CurrencyScale b) ->
   Amount b
-unsafeMkAmount = UnsafeAmount
+unsafeAmount = UnsafeAmount
 
 -- |
 -- A type @b@ satisfies 'IsBet' if we know:

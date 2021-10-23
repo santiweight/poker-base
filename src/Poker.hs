@@ -66,7 +66,7 @@ module Poker
     -- * Amount
     -- $amount
     Amount (unAmount),
-    unsafeMkAmount,
+    unsafeAmount,
     IsBet (..),
     mkAmount,
     BigBlind (..),

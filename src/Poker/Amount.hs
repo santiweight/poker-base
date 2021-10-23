@@ -1,11 +1,9 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Representation of money, and bet quantities.
 module Poker.Amount
   ( Amount (..),
-    pattern Amount,
     unsafeMkAmount,
     IsBet (..),
     mkAmount,
@@ -40,7 +38,12 @@ import Data.Text.Prettyprint.Doc (Pretty (pretty), viaShow)
 -- The use of the safe-money package allows for lossless conversion between currencies with
 -- well-maintained support for type safety, serialisation, and currency conversions.
 --
--- TODO add examples section
+-- @
+-- \{\-\# Language TypeApplications \#\-\}
+--
+-- case 'unsafeMkAmount' @\"USD\" ('discrete' 100) of
+--   'UnsafeAmount' x -> x     -- x == discrete 100
+-- @
 data Amount (b :: Symbol) where
   UnsafeAmount :: (GoodScale (CurrencyScale b), KnownSymbol b) => {unAmount :: Discrete' b (CurrencyScale b)} -> Amount b
 
@@ -54,21 +57,6 @@ instance Pretty (Amount b) where
   pretty = viaShow
 
 -- |
--- A pattern for accessing the @Discrete\'@ within an 'Amount'
---
--- @
--- \{\-\# Language TypeApplications \#\-\}
---
--- case 'unsafeMkAmount' @\"USD\" ('discrete' 100) of
---   'Amount' x -> x     -- x == discrete 100
--- @
-{-# COMPLETE Amount #-}
-
-pattern Amount ::
-  (GoodScale (CurrencyScale b), KnownSymbol b) =>
-  Discrete' b (CurrencyScale b) ->
-  Amount b
-pattern Amount x <- UnsafeAmount x
 
 -- |
 -- Returns an 'Amount' from a @Discrete\'@ so long as the given @Discrete\'@ is non-negative.
@@ -121,17 +109,17 @@ class (Monoid b, Show b, Ord b) => IsBet b where
 -- since they are implied by the constructor of Amount. However this might require some
 -- work from Richard Eisenberg first...
 instance (GoodScale (CurrencyScale b), KnownSymbol b) => Semigroup (Amount b) where
-  (Amount dis) <> (Amount dis') = UnsafeAmount $ dis + dis'
+  (UnsafeAmount dis) <> (UnsafeAmount dis') = UnsafeAmount $ dis + dis'
 
 instance (GoodScale (CurrencyScale b), KnownSymbol b) => Monoid (Amount b) where
   mempty = UnsafeAmount $ discrete 0
 
 instance (GoodScale (CurrencyScale b), KnownSymbol b) => IsBet (Amount b) where
   smallestAmount = UnsafeAmount $ discrete 1 :: Amount b
-  Amount l `minus` Amount r
+  UnsafeAmount l `minus` UnsafeAmount r
     | r > l = Nothing
     | otherwise = Just $ UnsafeAmount $ l - r
-  Amount l `add` Amount r = UnsafeAmount $ l + r
+  UnsafeAmount l `add` UnsafeAmount r = UnsafeAmount $ l + r
 
 -- | 'BigBlind' is the type describing poker chip amounts that are measured in big blinds.
 --

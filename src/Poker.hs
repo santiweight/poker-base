@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 -- | Datatypes and supporting infrastructure for poker computation.
 --
 module Poker
@@ -68,7 +66,6 @@ module Poker
     -- * Amount
     -- $amount
     Amount (unAmount),
-    pattern Amount,
     unsafeMkAmount,
     IsBet (..),
     mkAmount,

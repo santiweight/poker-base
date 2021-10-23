@@ -1,7 +1,20 @@
 cabal-version: 1.22
 name:           poker-base
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/santiweight/poker-base#readme>
+description:    This package provides datatypes and support for poker computation in Haskell.
+    .
+    == Usage
+    .
+    >>> import Poker
+    .
+    >>> h = Hand [Card Ace Club, Card Two Diamond]
+    .
+    >>> pretty h
+    .
+    >>> Ac2d
+    .
+    Please see the README on GitHub at <https://github.com/santiweight/poker-base#readme> for an overview.
+
 category:       Poker
 synopsis:       A library for core poker types
 homepage:       https://github.com/santiweight/poker-base#readme
@@ -18,7 +31,7 @@ tested-with:
    ||  == 8.10.7
    ||  == 9.0.1
 
-extra-source-files:
+extra-doc-files:
     README.md
     ChangeLog.md
 

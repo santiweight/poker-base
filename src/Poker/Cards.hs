@@ -338,7 +338,7 @@ unsafeOffsuit = UnsafeOffsuit
 unsafeSuited :: Rank -> Rank -> ShapedHole
 unsafeSuited = UnsafeSuited
 
--- >>> "AKs" :: ShapedHole
+-- | >>> "AKs" :: ShapedHole
 -- UnsafeSuited Ace King
 -- >>> "AKo" :: ShapedHole
 -- UnsafeOffsuit Ace King
@@ -359,7 +359,7 @@ instance IsString ShapedHole where
     where
       invalidShapedHole = error $ "Invalid ShapedHole: " <> str
 
--- >>> pretty $ take 10 allShapedHoles
+-- | >>> pretty $ take 10 allShapedHoles
 -- [AAp, AKs, AQs, AJs, ATs, A9s, A8s, A7s, A6s, A5s]
 instance Pretty ShapedHole where
   pretty = pretty . shapedHoleToShortTxt

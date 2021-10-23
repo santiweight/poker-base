@@ -115,7 +115,6 @@ rankToChr = \case
 -- Nothing
 --
 -- prop> \r -> chrToRank (rankToChr r) == Just r
--- +++ OK, passed 100 tests.
 chrToRank :: Char -> Maybe Rank
 chrToRank = \case
   '2' -> pure Two
@@ -163,7 +162,6 @@ suitToChr = \case
 -- Nothing
 --
 -- prop> \s -> chrToSuit (suitToChr s) == Just s
--- +++ OK, passed 100 tests.
 chrToSuit :: Char -> Maybe Suit
 chrToSuit = \case
   'c' -> pure Club
@@ -187,7 +185,6 @@ suitToUnicode = \case
 -- [Just Club,Just Diamond,Just Heart,Just Spade]
 --
 -- prop> \s -> suitFromUnicode (suitToUnicode s) == Just s
--- +++ OK, passed 100 tests.
 suitFromUnicode :: Char -> Maybe Suit
 suitFromUnicode = \case
   '♣' -> Just Club
@@ -213,6 +210,7 @@ instance IsString Card where
   fromString = fromJust . cardFromShortTxt . T.pack
 
 -- | All cards in a 'Deck'
+--
 -- >>> length allCards
 -- 52
 allCards :: [Card]
@@ -227,7 +225,6 @@ cardToShortTxt (Card r s) = T.pack [rankToChr r, suitToChr s]
 -- Just (Card {rank = Ace, suit = Club})
 --
 -- prop> \c -> cardFromShortTxt (cardToShortTxt c) == Just c
--- +++ OK, passed 100 tests.
 cardFromShortTxt :: Text -> Maybe Card
 cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   Just (r, Just (s, T.null -> True)) -> Card <$> chrToRank r <*> chrToSuit s
@@ -271,26 +268,25 @@ holeToShortTxt (UnsafeHole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
 -- True
 --
 -- prop> \h -> holeFromShortTxt (holeToShortTxt h) == Just h
--- +++ OK, passed 100 tests.
 holeFromShortTxt :: Text -> Maybe Hole
 holeFromShortTxt (T.splitAt 2 -> (c1, T.splitAt 2 -> (c2, T.unpack -> []))) =
   join $ mkHole <$> cardFromShortTxt c1 <*> cardFromShortTxt c2
 holeFromShortTxt _ = Nothing
 
 -- | Returns a 'Hole' if the incoming 'Card's are unique, else 'Nothing'.
--- Note that 'mkCard' automatically normalises the order of the given 'Card'. See 'Hole' for details.
+-- Note that 'mkHole' automatically normalises the order of the given 'Card's. See 'Hole' for details.
 --
 -- prop> \c1 c2 -> mkHole c1 c2 == mkHole c2 c1
--- +++ OK, passed 100 tests.
+--
 -- prop> \c1 c2 -> (c1 /= c2) ==> isJust (mkHole c1 c2)
--- +++ OK, passed 100 tests; 3 discarded.
 mkHole :: Card -> Card -> Maybe Hole
 mkHole c1 c2 =
   if c1 /= c2
     then Just $ if c1 > c2 then UnsafeHole c1 c2 else UnsafeHole c2 c1
     else Nothing
 
--- | All possible valid 'Hole's (the 'Hole's are also normalised).
+-- | All possible valid 'Hole's (the 'Hole's are already normalised).
+--
 -- >>> length allCards * length allCards
 -- 2704
 -- >>> length allHoles
@@ -387,7 +383,6 @@ mkPair = Pair
 -- Note that 'mkSuited' normalises the order of the incoming 'Rank's.
 --
 -- prop> \r1 r2 -> mkSuited r1 r2 == mkSuited r2 r1
--- +++ OK, passed 100 tests.
 mkSuited :: Rank -> Rank -> Maybe ShapedHole
 mkSuited r1 r2 =
   if r1 /= r2
@@ -398,7 +393,6 @@ mkSuited r1 r2 =
 -- Note that the internal representation of 'ShapedHole' is normalised:
 --
 -- prop> \r1 r2 -> mkOffsuit r1 r2 == mkOffsuit r2 r1
--- +++ OK, passed 100 tests.
 mkOffsuit :: Rank -> Rank -> Maybe ShapedHole
 mkOffsuit r1 r2 =
   if r1 /= r2
@@ -456,6 +450,7 @@ holeToShapedHole (UnsafeHole (Card r1 s1) (Card r2 s2))
 newtype Deck = UnsafeDeck [Card] deriving (Read, Show, Eq)
 
 -- | A unshuffled 'Deck' with all 'Card's
+--
 -- >>> freshDeck == unsafeDeck allCards
 -- True
 freshDeck :: Deck

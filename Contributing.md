@@ -8,11 +8,9 @@ We especially appreciate [pull requests](https://github.com/santiweight/poker-ba
 
 For proposing API changes and enhancement ideas, it's a good idea to discuss it as an issue first, and then follow the guidelines below.
 
-## Development Guidelines
+## Getting Started
 
-As a base library, a general development goal is to keep everything neat, tidy, documented and tested.
-
-To help with this we recommend a few external tools:
+We use the following tools in the library to help with testing and style:
 
 - [tasty-discover](https://hackage.haskell.org/package/tasty-discover) as a runner for the [tasty](https://hackage.haskell.org/package/tasty) test framework.
 - [ormolu](https://hackage.haskell.org/package/ormolu) to automate code formatting consistency.
@@ -23,7 +21,7 @@ They can be installed with:
 
 `cabal install tasty-discover ormolu hlint --overwrite-policy=always`
 
-Note that, if you use haskell-language-server, you may already have ormolu and hlint installed which are the default linters for Haskell.
+Note that, if you use `haskell-language-server`, you may already have `ormolu` and `hlint` installed which are the default linters for Haskell.
 
 `cabal-docspec` is not on hackage but can be installed as follows:
 
@@ -33,12 +31,14 @@ cd cabal-extras/cabal-docspec
 cabal install cabal-docspec:exe:cabal-docspec --allow-newer --overwrite-policy=always
 ```
 
-The ideal checklist for any PR is:
+## Pull Request checklist
 
-- builds with `cabal build all && cabal test` with no warnings. Feel free to add file pragmas or edit the .cabal file if you think the warning should be ignored.
-- passes `ormolu --mode check $(git ls-files '*.hs')`.
+As a base library, a `poker-base` has to be kept neat, tidy, documented and tested. To that end, please ensure that the library:
+
+- builds with `cabal build && cabal test` with no warnings. Feel free to add file pragmas or edit the `poker-base.cabal` if you think the warning should be ignored.
+- passes `ormolu --cabal-default-extensions --mode check $(git ls-files '*.hs')`.
 - passes `hlint .`
-- passes `cabal-docspec`
+- passes `cabal v2-build && cabal-docspec --check-properties`
 
 If you are requesting a change that adds new functionality or affects behaviour, please:
 
@@ -47,3 +47,4 @@ If you are requesting a change that adds new functionality or affects behaviour,
 - include [haddocks](https://haskell-haddock.readthedocs.io/en/latest/) that will be useful for other users.
 - update the change log for non-trivial changes.
 
+If anything is not working for you... don't waste your time! Open an issue and ask the authors!

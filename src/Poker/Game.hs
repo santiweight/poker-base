@@ -183,7 +183,9 @@ data Board where
   TurnBoard :: !Card -> !Board -> Board
   FlopBoard :: (Card, Card, Card) -> !Board -> Board
   PreFlopBoard :: !Board -> Board
-  InitialTable :: Board -- ^ Round where post actions occur.
+  InitialTable ::
+    -- | Round where post actions occur.
+    Board
   deriving (Eq, Ord, Show)
 
 -- | Amount of money needed to join a game.

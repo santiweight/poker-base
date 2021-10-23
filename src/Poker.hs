@@ -91,6 +91,6 @@ import Poker.Range
 
 -- $usage
 -- >>> import Poker
--- >>> h = Hand [Card Ace Club, Card Two Diamond]
--- >>> pretty h
--- >>> Ac2d
+-- >>> Just h = mkHole (Card Ace Club) (Card Two Diamond)
+-- >>> holeToShortTxt h
+-- "Ac2d"

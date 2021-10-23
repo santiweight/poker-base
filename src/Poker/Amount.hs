@@ -29,6 +29,7 @@ import Data.Text.Prettyprint.Doc (Pretty (pretty), viaShow)
 
 -- $setup
 -- >>> :set -XDataKinds
+-- >>> import Prettyprinter
 
 -- |
 -- 'Amount' is the type used to represent amounts of money during a game of poker.
@@ -74,7 +75,7 @@ pattern Amount x <- UnsafeAmount x
 --
 -- @
 -- >>> mkAmount @"USD" 0
--- Just (UnsafeMkAmount {unAmount = Discrete "USD" 100%1 0})
+-- Just (UnsafeAmount {unAmount = Discrete "USD" 100%1 0})
 -- >>> mkAmount @"USD" (-1)
 -- Nothing
 mkAmount ::

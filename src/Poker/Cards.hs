@@ -44,7 +44,7 @@ where
 import Prettyprinter
 import Prettyprinter.Internal ( unsafeTextWithoutNewlines, Doc(Char) )
 #else
-import Data.Text.Prettyprint.Doc.Internal
+import Data.Text.Prettyprint.Doc
 #endif
 import Control.Applicative
 import Control.Monad
@@ -60,6 +60,8 @@ import Test.QuickCheck.Arbitrary.Generic (GenericArbitrary (..))
 
 -- $setup
 -- >>> import Test.QuickCheck
+-- >>> import Data.Maybe
+-- >>> import Prettyprinter
 
 -- | The 'Rank' of a playing 'Card'
 data Rank
@@ -183,6 +185,7 @@ suitToUnicode = \case
 
 -- | >>> suitFromUnicode <$> ['♣', '♦', '♥', '♠']
 -- [Just Club,Just Diamond,Just Heart,Just Spade]
+--
 -- prop> \s -> suitFromUnicode (suitToUnicode s) == Just s
 -- +++ OK, passed 100 tests.
 suitFromUnicode :: Char -> Maybe Suit
@@ -222,6 +225,7 @@ cardToShortTxt (Card r s) = T.pack [rankToChr r, suitToChr s]
 
 -- | >>> cardFromShortTxt "Ac"
 -- Just (Card {rank = Ace, suit = Club})
+--
 -- prop> \c -> cardFromShortTxt (cardToShortTxt c) == Just c
 -- +++ OK, passed 100 tests.
 cardFromShortTxt :: Text -> Maybe Card
@@ -265,6 +269,7 @@ holeToShortTxt (UnsafeHole c1 c2) = cardToShortTxt c1 <> cardToShortTxt c2
 -- Just (UnsafeHole (Card {rank = Ace, suit = Club}) (Card {rank = King, suit = Diamond}))
 -- >>> ("KdAc" :: Hole) == "AcKd"
 -- True
+--
 -- prop> \h -> holeFromShortTxt (holeToShortTxt h) == Just h
 -- +++ OK, passed 100 tests.
 holeFromShortTxt :: Text -> Maybe Hole
@@ -278,7 +283,7 @@ holeFromShortTxt _ = Nothing
 -- prop> \c1 c2 -> mkHole c1 c2 == mkHole c2 c1
 -- +++ OK, passed 100 tests.
 -- prop> \c1 c2 -> (c1 /= c2) ==> isJust (mkHole c1 c2)
--- +++ OK, passed 100 tests; 2 discarded.
+-- +++ OK, passed 100 tests; 3 discarded.
 mkHole :: Card -> Card -> Maybe Hole
 mkHole c1 c2 =
   if c1 /= c2

@@ -45,8 +45,8 @@ instance Semigroup Freq where
 -- Range merges require Monoid values, and the Note that the internal Map is strict
 -- >>> mempty @(Range Hole Freq)
 -- Range {_range = fromList []}
--- >>> let left = fromList [("55p" :: ShapedHole, Freq 1 3)]
--- >>> let right = fromList [("55p", Freq 10 32)]
+-- >>> let left = rangeFromList [("55p" :: ShapedHole, Freq 1 3)]
+-- >>> let right = rangeFromList [("55p", Freq 10 32)]
 -- >>> left <> right
 -- Range {_range = fromList [(Pair Five,Freq 11 35)]}
 newtype Range a b = Range

@@ -136,26 +136,26 @@ spec_mkShapedHole = do
   it "mkSuited success" $
     mkSuited Ace King
       `shouldSatisfy` ( \case
-                          Just (Suited Ace King) -> True
+                          Just (UnsafeSuited Ace King) -> True
                           _ -> False
                       )
   it "mkSuited wrong order succeeds" $
     mkSuited King Ace
       `shouldSatisfy` ( \case
-                          Just (Suited Ace King) -> True
+                          Just (UnsafeSuited Ace King) -> True
                           _ -> False
                       )
   it "mkSuited failure" $ mkSuited King King `shouldBe` Nothing
   it "mkOffsuit success" $
     mkOffsuit Ace King
       `shouldSatisfy` ( \case
-                          Just (Offsuit Ace King) -> True
+                          Just (UnsafeOffsuit Ace King) -> True
                           _ -> False
                       )
   it "mkOffsuit wrong order succeeds" $
     mkOffsuit King Ace
       `shouldSatisfy` ( \case
-                          Just (Offsuit Ace King) -> True
+                          Just (UnsafeOffsuit Ace King) -> True
                           _ -> False
                       )
   it "mkOffsuit failure" $ mkOffsuit King King `shouldBe` Nothing
@@ -271,8 +271,8 @@ spec_all = do
           shouldSatisfy
           ( \case
               (Pair _) -> True
-              (Offsuit r1 r2) -> r1 > r2
-              (Suited r1 r2) -> r1 > r2
+              (UnsafeOffsuit r1 r2) -> r1 > r2
+              (UnsafeSuited r1 r2) -> r1 > r2
           )
   where
     allSuitsExpected = [Club, Diamond, Heart, Spade]

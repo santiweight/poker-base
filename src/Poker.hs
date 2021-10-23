@@ -4,9 +4,6 @@ module Poker
   ( -- * Usage
     -- $usage
 
-    -- * Overview
-    -- $overview
-
     -- * Cards
     Rank (..),
     allRanks,
@@ -45,7 +42,6 @@ module Poker
     holeFromShortTxt,
 
     -- * Game
-    -- $game
     Position (..),
     NumPlayers (..),
     numPlayersToWord8,
@@ -64,7 +60,6 @@ module Poker
     Stake (..),
 
     -- * Amount
-    -- $amount
     Amount (unAmount),
     unsafeAmount,
     IsBet (..),

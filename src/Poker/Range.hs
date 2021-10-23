@@ -19,15 +19,6 @@ import qualified Data.Map.Strict as Map
 import Prettyprinter
 #else
 import Data.Text.Prettyprint.Doc
-  ( (<+>)
-    Pretty(pretty),
-    colon,
-    comma,
-    concatWith,
-    lbrace,
-    rbrace,
-    surround,
- )
 #endif
 import Poker.Cards
 

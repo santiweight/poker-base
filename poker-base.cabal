@@ -31,7 +31,6 @@ library
     Poker
     Poker.Range
     Poker.Amount
-    Poker.BigBlind
     Poker.Cards
     Poker.Game
   other-modules:

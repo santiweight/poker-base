@@ -85,7 +85,6 @@ module Poker
 where
 
 import Poker.Amount
-import Poker.BigBlind
 import Poker.Cards
 import Poker.Game
 import Poker.Range

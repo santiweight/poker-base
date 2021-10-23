@@ -9,21 +9,17 @@ module Poker.Amount
     unsafeMkAmount,
     IsBet (..),
     mkAmount,
+    bigBlindToDense,
+    BigBlind (..),
   )
 where
 
+import GHC.Generics (Generic)
 import GHC.TypeLits
   ( KnownSymbol,
     Symbol,
   )
 import Money
-  ( CurrencyScale,
-    Discrete',
-    GoodScale,
-    discrete,
-    someDiscreteAmount,
-    toSomeDiscrete,
-  )
 
 #if MIN_VERSION_prettyprinter(1,7,0)
 import Prettyprinter (Pretty (pretty), viaShow)
@@ -135,3 +131,35 @@ instance (GoodScale (CurrencyScale b), KnownSymbol b) => IsBet (Amount b) where
     | r > l = Nothing
     | otherwise = Just $ UnsafeAmount $ l - r
   Amount l `add` Amount r = UnsafeAmount $ l + r
+
+-- | 'BigBlind' is the type describing poker chip amounts that are measured in big blinds.
+--
+-- The internal representation of 'BigBlind' is @'Amount' "BB"@. This module introduces
+-- a new instance of 'CurrencyScale' (from the
+-- <https://hackage.haskell.org/package/safe-money safe-money> package), which allows
+-- translation from BigBlind to any valid currency in a lossless manner.
+--
+-- The small unit of a \"BB\" is a \"bb\", with 100 \"bb\"s in a \"BB\".
+--
+-- TODO include an API for translating from BigBlind to any safe-money currency, given
+-- a 'Poker.Game.Stake'.
+--
+-- Calculations in the safe-money package are done with Discrete and Dense
+-- types. Discrete values are used to describe a regular BigBlind value,
+-- such as 1.30bb. Dense values are used when calculating some complex
+-- (non-discrete) value such as one third of a big blind. When using the BigBlind
+-- type, it is best to do all calculation with Dense "BB" values and then
+-- convert back to a Discrete "BB" "bb" after all calculation has been completed:
+newtype BigBlind = BigBlind {unBigBlind :: Amount "BB"}
+  deriving (Show, Generic, Eq, Ord, IsBet, Semigroup, Monoid)
+
+type instance
+  UnitScale "BB" "bb" =
+    '(100, 1)
+
+type instance CurrencyScale "BB" = UnitScale "BB" "bb"
+
+-- | When working with a 'BigBlind' you might want to (cautiously) retain losslessness
+-- when using functions such as % calculations or division. A 'Dense' allows you to do so.
+bigBlindToDense :: BigBlind -> Dense "BB"
+bigBlindToDense = denseFromDiscrete . unAmount . unBigBlind

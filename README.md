@@ -25,7 +25,7 @@ To become Haskell's core de facto library for poker applications. We are working
 Some principles that this library aims to uphold:
  - Targeted at intermediate Haskellers. This package will not shy away from using Haskell features that we deem right-for-the-job. However, we also make an effort to make `poker-base`'s API usable for the intermediate Haskeller.
  - Thin around the waist. This library aims to contain only such datatypes and functionality that are uncontroversial (~90% agree). If a datatype or API would be incompatible with some people's needs, then that functionality will not be included `poker-base`.
- - 100% test coverage/documentation. Still WIP.
+ - 100% test coverage/documentation!
  - Fast. This library is intended to be fast. However, note that API usability will come over speed always. Thankfully, Haskell has features such as `newtype` and `PatternSynonyms` which we use to hide implementation details.
 
 ## Libraries based on `poker-base`

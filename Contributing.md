@@ -36,7 +36,7 @@ cabal install cabal-docspec:exe:cabal-docspec --allow-newer --overwrite-policy=a
 ## Pull Request checklist
 
 - builds with `cabal build all && cabal test` with no warnings. Feel free to add file pragmas or edit the `poker-base.cabal` if you think the warning should be ignored.
-- passes `ormolu --mode check $(git ls-files '*.hs')`.
+- passes `ormolu --cabal-default-extensions --mode check $(git ls-files '*.hs')`.
 - passes `hlint .`
 - passes `cabal v2-build && cabal-docspec --check-properties`
 

@@ -13,7 +13,7 @@ module Poker.Cards
     suitFromUnicode,
     Card (..),
     allCards,
-    Hole(..),
+    Hole (..),
     mkHole,
     allHoles,
     ShapedHole (..),
@@ -228,12 +228,11 @@ cardFromShortTxt cs = case second T.uncons <$> T.uncons cs of
   _ -> Nothing
 
 -- | 'Hole' represents a player's hole cards in a game of Texas Hold\'Em
-data Hole = UnsafeHole !Card !Card
+data Hole = UnsafeHole !Card !Card -- ^ First 'Card' is expected to be '>' the second (according to 'Ord')
   deriving (Eq, Ord, Show, Read, Generic)
 
--- | Unsafely create a new 'Hole'. The two input 'Card's are expected to be
--- unique, and the first 'Card' should be less than the second 'Card' (as defined by
--- 'Ord'). See 'mkHole' for a safe way to create a 'Hole'.
+-- | Unsafely create a new 'Hole'. The first 'Card' should be '>' than the second (according to 'Ord').
+-- See 'mkHole' for a safe way to create a 'Hole'.
 unsafeHole :: Card -> Card -> Hole
 unsafeHole = UnsafeHole
 
@@ -308,24 +307,27 @@ allHoles = reverse $ do
 -- UnsafeOffsuit Ace Four
 -- >>> "KJs" :: ShapedHole
 -- UnsafeSuited King Jack
-data ShapedHole = Pair !Rank | UnsafeOffsuit !Rank !Rank | UnsafeSuited !Rank !Rank
+data ShapedHole
+  = Pair !Rank
+  | UnsafeOffsuit !Rank !Rank -- ^ First 'Rank' is expected to be '>' the second
+  | UnsafeSuited !Rank !Rank -- ^ First 'Rank' is expected to be '>' the second
   deriving (Eq, Ord, Show, Read, Generic)
 
 {-# COMPLETE Pair, Offsuit, Suited #-}
 
--- | The first 'Rank' is '>' the second 'Rank' according to 'Ord'
+-- | The first 'Rank' is '>' the second 'Rank'
 pattern Offsuit :: Rank -> Rank -> ShapedHole
 pattern Offsuit r1 r2 <- UnsafeOffsuit r1 r2
 
--- | The first 'Rank' is '>' the second 'Rank' according to 'Ord'
+-- | The first 'Rank' is '>' the second 'Rank'
 pattern Suited :: Rank -> Rank -> ShapedHole
 pattern Suited r1 r2 <- UnsafeSuited r1 r2
 
--- | First 'Rank' should '>' than second 'Rank' (according to 'Ord')
+-- | First 'Rank' should '>' than second 'Rank'
 unsafeOffsuit :: Rank -> Rank -> ShapedHole
 unsafeOffsuit = UnsafeOffsuit
 
--- | First 'Rank' should be '>' than second 'Rank' (according to 'Ord')
+-- | First 'Rank' should be '>' than second 'Rank'
 unsafeSuited :: Rank -> Rank -> ShapedHole
 unsafeSuited = UnsafeSuited
 
@@ -365,8 +367,8 @@ instance Arbitrary ShapedHole where
 -- >>> shapedHoleToShortTxt <$> (mkSuited Ace King)
 -- Just "AKs"
 shapedHoleToShortTxt :: ShapedHole -> Text
-shapedHoleToShortTxt (Offsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
-shapedHoleToShortTxt (Suited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
+shapedHoleToShortTxt (UnsafeOffsuit r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "o"
+shapedHoleToShortTxt (UnsafeSuited r1 r2) = rankToChr r1 `T.cons` rankToChr r2 `T.cons` "s"
 shapedHoleToShortTxt (Pair r) = rankToChr r `T.cons` rankToChr r `T.cons` "p"
 
 -- | Build a pair 'ShapedHole' from the given 'Rank'
@@ -422,11 +424,11 @@ shapedHoleToHoles = \case
     s1 <- allSuits
     s2 <- drop (fromEnum s1 + 1) allSuits
     pure . fromJust $ mkHole (Card r s1) (Card r s2)
-  Offsuit r1 r2 -> do
+  UnsafeOffsuit r1 r2 -> do
     s1 <- allSuits
     s2 <- filter (s1 /=) allSuits
     pure . fromJust $ mkHole (Card r1 s1) (Card r2 s2)
-  Suited r1 r2 -> do
+  UnsafeSuited r1 r2 -> do
     s <- allSuits
     pure . fromJust $ mkHole (Card r1 s) (Card r2 s)
 

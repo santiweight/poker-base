@@ -20,8 +20,7 @@ module Poker
     allCards,
 
     -- * Hole cards
-    Hole,
-    pattern Hole,
+    Hole (..),
     mkHole,
     allHoles,
     ShapedHole (Pair),
@@ -33,7 +32,6 @@ module Poker
     allShapedHoles,
     holeToShapedHole,
     Deck,
-    pattern Deck,
     freshDeck,
     unsafeDeck,
     shapedHoleToHoles,

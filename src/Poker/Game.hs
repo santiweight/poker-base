@@ -8,23 +8,30 @@ module Poker.Game
     numPlayersFromWord8,
     mkNumPlayers,
     allPositions,
-    positionToTxt,
+    allPossiblePositions,
     getPreflopOrder,
     buttonPosition,
+    smallBlindPosition,
     bigBlindPosition,
     getPostFlopOrder,
     sortPostflop,
+    sortPreflop,
     Seat (..),
     Pot (..),
     Stack (..),
     Stake (..),
+    BetAction (..),
+    IsHero (..),
+    Board (..),
   )
 where
 
+-- ,smallBlindPosition,sortPreflop)
+
 import Data.Data
-import Data.Text (Text)
-import Data.Word (Word8)
+import Data.Word
 import Poker.Cards
+import Poker.Utils (enumerate)
 import Prettyprinter
 
 -- | A player's 'Position' in a game of poker.
@@ -32,15 +39,15 @@ import Prettyprinter
 -- 'Position's are ordered by table order (clockwise). The smallest 'Position', @Position 0@,
 -- is the first player to act preflop. The largest 'Position' is always the big blind.
 --
+-- >>> allPositions TwoPlayers
+-- [BU,BB]
 -- >>> allPositions SixPlayers
--- [Position 0,Position 1,Position 2,Position 3,Position 4,Position 5]
--- >>> positionToTxt SixPlayers <$> allPositions SixPlayers
--- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> positionToTxt NinePlayers <$> allPositions NinePlayers
--- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
+-- [UTG,UTG1,UTG2,BU,SB,BB]
+-- >>> allPositions TenPlayers
+-- [UTG,UTG1,UTG2,UTG3,UTG4,UTG5,UTG6,BU,SB,BB]
 --
 -- The API for 'Position' is unstable. We are open to better ideas :)
-newtype Position = Position Word8
+data Position = UTG | UTG1 | UTG2 | UTG3 | UTG4 | UTG5 | UTG6 | BU | SB | BB
   deriving (Read, Show, Enum, Bounded, Eq, Ord, Data, Typeable)
 
 instance Pretty Position where
@@ -57,7 +64,8 @@ data NumPlayers
   | SevenPlayers
   | EightPlayers
   | NinePlayers
-  deriving (Enum, Eq, Ord)
+  | TenPlayers
+  deriving (Show, Enum, Eq, Ord, Bounded)
 
 -- | Convert a 'NumPlayers' to a 'Word8'.
 numPlayersToWord8 :: NumPlayers -> Word8
@@ -69,6 +77,7 @@ numPlayersToWord8 SixPlayers = 6
 numPlayersToWord8 SevenPlayers = 7
 numPlayersToWord8 EightPlayers = 8
 numPlayersToWord8 NinePlayers = 9
+numPlayersToWord8 TenPlayers = 9
 
 -- | Convert a 'Word8' to a 'NumPlayers'.
 numPlayersFromWord8 :: Word8 -> Maybe NumPlayers
@@ -80,86 +89,103 @@ numPlayersFromWord8 6 = Just SixPlayers
 numPlayersFromWord8 7 = Just SevenPlayers
 numPlayersFromWord8 8 = Just EightPlayers
 numPlayersFromWord8 9 = Just NinePlayers
+numPlayersFromWord8 10 = Just TenPlayers
 numPlayersFromWord8 _ = Nothing
 
 -- | WARNING: The incoming 'Integral' is downcast to a 'Word8'
+--
+-- >>> mkNumPlayers 2
+-- Just TwoPlayers
+-- >>> mkNumPlayers 5
+-- Just FivePlayers
+-- >>> mkNumPlayers 9
+-- Just NinePlayers
 mkNumPlayers :: Integral a => a -> Maybe NumPlayers
 mkNumPlayers num | num >= 2 && num <= 9 = numPlayersFromWord8 $ fromIntegral num
 mkNumPlayers _ = Nothing
 
--- | >>> allPositions SixPlayers
--- [Position 0,Position 1,Position 2,Position 3,Position 4,Position 5]
+-- | >>> allPossiblePositions
+-- [UTG,UTG1,UTG2,UTG3,UTG4,UTG5,UTG6,BU,SB,BB]
+allPossiblePositions :: [Position]
+allPossiblePositions = enumerate
+
+-- | >>> allPositions <$> enumerate
+-- [[BU,BB],[BU,SB,BB],[UTG,BU,SB,BB],[UTG,UTG1,BU,SB,BB],[UTG,UTG1,UTG2,BU,SB,BB],[UTG,UTG1,UTG2,UTG3,BU,SB,BB],[UTG,UTG1,UTG2,UTG3,UTG4,BU,SB,BB],[UTG,UTG1,UTG2,UTG3,UTG4,UTG5,BU,SB,BB],[UTG,UTG1,UTG2,UTG3,UTG4,UTG5,UTG6,BU,SB,BB]]
 allPositions :: NumPlayers -> [Position]
-allPositions (numPlayersToWord8 -> num) = Position <$> [0 .. num - 1]
+allPositions = \case
+  TwoPlayers -> [BU, BB]
+  ThreePlayers -> positions 3
+  FourPlayers -> positions 4
+  FivePlayers -> positions 5
+  SixPlayers -> positions 6
+  SevenPlayers -> positions 7
+  EightPlayers -> positions 8
+  NinePlayers -> positions 9
+  TenPlayers -> positions 10
+  where
+    buThruBb = [BU, SB, BB]
+    positions num = take (num - 3) [UTG .. UTG6] ++ buThruBb
 
--- | >>> positionToTxt TwoPlayers <$> allPositions TwoPlayers
--- ["BU","BB"]
--- >>> positionToTxt SixPlayers <$> allPositions SixPlayers
--- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> positionToTxt NinePlayers <$> allPositions NinePlayers
--- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
-positionToTxt :: NumPlayers -> Position -> Text
-positionToTxt (numPlayersToWord8 -> num) (Position pos) =
-  let allPositionTexts = ["UTG", "UTG1", "UTG2", "LJ", "HJ", "CO", "BU", "SB", "BB"]
-      positionTexts = case num of
-        2 -> ["BU", "BB"]
-        num' | num' > 2 && num' <= 9 -> drop (9 - fromIntegral num') allPositionTexts
-        _ -> error $ "Unexpected NumPlayers value: " <> show num
-   in positionTexts !! fromIntegral pos
-
--- | >>> positionToTxt TwoPlayers <$> getPreflopOrder TwoPlayers
--- ["BU","BB"]
--- >>> positionToTxt SixPlayers <$> getPreflopOrder SixPlayers
--- ["LJ","HJ","CO","BU","SB","BB"]
--- >>> positionToTxt NinePlayers <$> getPreflopOrder NinePlayers
--- ["UTG","UTG1","UTG2","LJ","HJ","CO","BU","SB","BB"]
+-- | >>> getPreflopOrder TwoPlayers
+-- [BU,BB]
+-- >>> getPreflopOrder SixPlayers
+-- [UTG,UTG1,UTG2,BU,SB,BB]
+-- >>> getPreflopOrder NinePlayers
+-- [UTG,UTG1,UTG2,UTG3,UTG4,UTG5,BU,SB,BB]
 getPreflopOrder :: NumPlayers -> [Position]
 getPreflopOrder = allPositions
 
--- | >>> buttonPosition TwoPlayers
--- Position 0
--- >>> (\numPlayers -> positionToTxt numPlayers $ buttonPosition numPlayers) <$> enumFromTo TwoPlayers NinePlayers
--- ["BU","BU","BU","BU","BU","BU","BU","BU"]
-buttonPosition :: NumPlayers -> Position
-buttonPosition (numPlayersToWord8 -> num) = case num of
-  2 -> Position 0
-  _ -> Position (num - 3)
+-- | >>> buttonPosition
+-- BU
+buttonPosition :: Position
+buttonPosition = BU
 
--- | >>> bigBlindPosition TwoPlayers
--- Position 1
--- >>> (\numPlayers -> positionToTxt numPlayers $ bigBlindPosition numPlayers) <$> enumFromTo TwoPlayers NinePlayers
--- ["BB","BB","BB","BB","BB","BB","BB","BB"]
-bigBlindPosition :: NumPlayers -> Position
-bigBlindPosition (numPlayersToWord8 -> num) = Position (num - 1)
+-- | >>> bigBlindPosition
+-- WAS with actual type ‘Position’
+-- NOW BB
+bigBlindPosition :: Position
+bigBlindPosition = BB
 
--- | >>> positionToTxt TwoPlayers <$> getPostFlopOrder TwoPlayers
--- ["BB","BU"]
--- >>> positionToTxt ThreePlayers <$> getPostFlopOrder ThreePlayers
--- ["SB","BB","BU"]
--- >>> positionToTxt SixPlayers <$> getPostFlopOrder SixPlayers
--- ["SB","BB","LJ","HJ","CO","BU"]
--- >>> positionToTxt NinePlayers <$> getPostFlopOrder NinePlayers
--- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
-getPostFlopOrder :: NumPlayers -> [Position]
-getPostFlopOrder numPlayers@(fromIntegral . numPlayersToWord8 -> num) =
-  take num
-    . drop 1
-    . dropWhile (/= buttonPosition numPlayers)
-    . cycle
-    $ allPositions numPlayers
+-- | >>> smallBlindPosition TwoPlayers
+-- BU
+-- >>> smallBlindPosition ThreePlayers
+-- SB
+-- >>> smallBlindPosition <$> enumerate
+-- [BU,SB,SB,SB,SB,SB,SB,SB,SB]
+smallBlindPosition :: NumPlayers -> Position
+smallBlindPosition TwoPlayers = BU
+smallBlindPosition _ = SB
+
+-- | >>> getPostFlopOrder
+-- [SB,BB,UTG,UTG1,UTG2,UTG3,UTG4,UTG5,UTG6,BU]
+getPostFlopOrder :: [Position]
+getPostFlopOrder = SB : BB : [UTG .. BU]
+
+-- | Sort a list of positions acccording to preflop ordering
+--
+-- >>> sortPreflop (allPositions TwoPlayers)
+-- [BU,BB]
+-- >>> sortPreflop (allPositions ThreePlayers)
+-- [BU,SB,BB]
+-- >>> sortPreflop (allPositions SixPlayers)
+-- [UTG,UTG1,UTG2,BU,SB,BB]
+-- >>> sortPreflop (allPositions TenPlayers)
+-- [UTG,UTG1,UTG2,UTG3,UTG4,UTG5,UTG6,BU,SB,BB]
+sortPreflop :: [Position] -> [Position]
+sortPreflop ps = filter (`elem` ps) enumerate
 
 -- | Sort a list of positions acccording to postflop ordering
 --
--- >>> positionToTxt TwoPlayers <$> sortPostflop TwoPlayers (allPositions TwoPlayers)
--- ["BB","BU"]
--- >>> positionToTxt ThreePlayers <$> sortPostflop ThreePlayers (allPositions ThreePlayers)
--- ["SB","BB","BU"]
--- >>> positionToTxt SixPlayers <$> sortPostflop SixPlayers (allPositions SixPlayers)
--- ["SB","BB","LJ","HJ","CO","BU"]
--- >>> positionToTxt NinePlayers <$> sortPostflop NinePlayers (allPositions NinePlayers)
--- ["SB","BB","UTG","UTG1","UTG2","LJ","HJ","CO","BU"]
-sortPostflop :: NumPlayers -> [Position] -> [Position]
-sortPostflop num ps = filter (`elem` ps) $ getPostFlopOrder num
+-- >>> sortPostflop (allPositions TwoPlayers)
+-- [BB,BU]
+-- >>> sortPostflop (allPositions ThreePlayers)
+-- [SB,BB,BU]
+-- >>> sortPostflop (allPositions SixPlayers)
+-- [SB,BB,UTG,UTG1,UTG2,BU]
+-- >>> sortPostflop (allPositions TenPlayers)
+-- [SB,BB,UTG,UTG1,UTG2,UTG3,UTG4,UTG5,UTG6,BU]
+sortPostflop :: [Position] -> [Position]
+sortPostflop ps = filter (`elem` ps) getPostFlopOrder
 
 -- | Is a player hero or villain. Hero in poker means that the hand is from
 -- the hero player's perspective.

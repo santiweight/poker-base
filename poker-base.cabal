@@ -39,6 +39,7 @@ source-repository head
 library
   exposed-modules:
     Poker
+    Poker.Evaluate
     Poker.Range
     Poker.Amount
     Poker.Cards
